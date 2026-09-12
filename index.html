@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#05080c">
+
+  <title>Plant Vision AR</title>
+  <meta name="description" content="Spatial Plant Health & Telemetry Bio-Diagnostic WebAR">
+
+  <link rel="stylesheet" href="/src/index.css">
+</head>
+<body>
+
+  <main id="app-viewport">
+    <!-- Camera & Visual Layer -->
+    <div id="media-layer">
+      <video id="camera-video" playsinline muted autoplay></video>
+      <canvas id="display-canvas"></canvas>
+      <canvas id="spectral-canvas"></canvas>
+      <div class="viewport-ambient-vignette"></div>
+    </div>
+
+    <!-- Spatial Bio-Scanning Reticle Frame -->
+    <div id="spatial-scan-frame">
+      <div class="scan-corner tl"></div>
+      <div class="scan-corner tr"></div>
+      <div class="scan-corner bl"></div>
+      <div class="scan-corner br"></div>
+      <div class="scan-laser-line"></div>
+      <div class="scan-crosshair"></div>
+    </div>
+
+    <!-- Interactive Spatial Leaf Pins Layer -->
+    <div id="spatial-pins-layer"></div>
+
+    <!-- VisionOS Spatial Chrome UI -->
+    <div id="spatial-ui-root">
+      <!-- Top Bar -->
+      <header class="spatial-top-bar">
+        <div class="app-branding-pill">
+          <span class="brand-leaf-icon">🪴</span>
+          <span class="brand-text">PLANT VISION</span>
+        </div>
+
+        <!-- VisionOS Segmented Mode Switcher (VIGOR | SPECTRAL | TISSUE) -->
+        <div id="mode-segmented-control"></div>
+      </header>
+
+      <!-- VisionOS Floating 3D Telemetry Card Anchor -->
+      <div id="spatial-card-anchor"></div>
+
+      <!-- Bottom Bar: Specimen Deck Carousel -->
+      <footer class="spatial-bottom-bar">
+        <div id="specimen-deck-container"></div>
+      </footer>
+    </div>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
