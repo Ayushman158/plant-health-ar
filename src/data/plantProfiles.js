@@ -2,10 +2,10 @@ export const PLANT_PROFILES = {
   money_plant: {
     id: 'money_plant',
     name: 'Money Plant',
-    commonName: 'Epipremnum Aureum (Devil\'s Ivy)',
+    commonName: 'Devil\'s Ivy (Epipremnum)',
     specimenImage: '/assets/specimens/pothos.jpg',
     status: 'optimal',
-    statusLabel: 'Optimal Foliage',
+    statusLabel: 'Thriving & Healthy',
     vigor: 93,
     colorScheme: {
       primary: '#86efac',       // Pastel Mint
@@ -15,21 +15,21 @@ export const PLANT_PROFILES = {
       glow: 'rgba(134, 239, 172, 0.4)'
     },
     metrics: {
-      chlorophyll: { value: 91, unit: '%', label: 'Chlorophyll', status: 'optimal', color: '#86efac' },
-      hydration: { value: 85, unit: '%', label: 'Turgor Pressure', status: 'optimal', color: '#bae6fd' },
-      solarPAR: { value: 78, unit: '%', label: 'Ambient Light Flux', status: 'optimal', color: '#fef08a' },
-      cuticle: { value: 95, unit: '%', label: 'Cuticle Vigor', status: 'optimal', color: '#86efac' }
+      chlorophyll: { value: 91, unit: '%', label: 'Leaf Vitality', detail: 'Rich & Vibrant', color: '#86efac' },
+      hydration: { value: 85, unit: '%', label: 'Water Level', detail: 'Well Hydrated', color: '#bae6fd' },
+      solarPAR: { value: 78, unit: '%', label: 'Sunlight', detail: 'Ideal Indirect Light', color: '#fef08a' },
+      cuticle: { value: 95, unit: '%', label: 'Leaf Shine', detail: 'Clean & Glossy', color: '#a7f3d0' }
     },
-    tissueData: {
-      transpirationRate: '4.5 mmol/m²s',
-      leafTemp: '22.0°C',
-      stomataStatus: 'Open / Transpiring',
-      pathogenRisk: '0.01'
-    },
+    careTips: [
+      { icon: '💧', title: 'Watering', desc: 'Water once a week or when the top 1 inch of soil feels dry.' },
+      { icon: '☀️', title: 'Sunlight', desc: 'Loves bright, indirect light near a window or desk lamp.' },
+      { icon: '🪴', title: 'Leaf Care', desc: 'Wipe leaves gently with a damp cloth to remove room dust.' },
+      { icon: '🌡️', title: 'Temperature', desc: 'Enjoys comfortable room temperature (18°C – 28°C).' }
+    ],
     pins: [
-      { id: 'mp1', x: 48, y: 38, label: 'Heart Blade', score: 95, color: '#86efac', note: 'Active chlorophyll synthesis' },
-      { id: 'mp2', x: 30, y: 55, label: 'Variegation Zone', score: 92, color: '#86efac', note: 'Carotenoid / green balance' },
-      { id: 'mp3', x: 65, y: 68, label: 'Petiole Runner', score: 89, color: '#bae6fd', note: 'Turgor pressure robust' }
+      { id: 'mp1', x: 48, y: 38, label: 'Top Leaf', score: 95, color: '#86efac', note: 'Strong new growth' },
+      { id: 'mp2', x: 30, y: 55, label: 'Golden Pattern', score: 92, color: '#86efac', note: 'Vibrant variegation' },
+      { id: 'mp3', x: 65, y: 68, label: 'Healthy Vine', score: 89, color: '#bae6fd', note: 'Firm water-rich stem' }
     ]
   },
   monstera: {
@@ -38,7 +38,7 @@ export const PLANT_PROFILES = {
     commonName: 'Swiss Cheese Plant',
     specimenImage: '/assets/specimens/monstera.jpg',
     status: 'optimal',
-    statusLabel: 'Flourishing',
+    statusLabel: 'Looking Great',
     vigor: 94,
     colorScheme: {
       primary: '#86efac',       // Pastel Mint
@@ -48,21 +48,21 @@ export const PLANT_PROFILES = {
       glow: 'rgba(134, 239, 172, 0.4)'
     },
     metrics: {
-      chlorophyll: { value: 92, unit: '%', label: 'Chlorophyll', status: 'optimal', color: '#86efac' },
-      hydration: { value: 84, unit: '%', label: 'Turgor Pressure', status: 'optimal', color: '#bae6fd' },
-      solarPAR: { value: 78, unit: '%', label: 'Light Exposure', status: 'optimal', color: '#fef08a' },
-      cuticle: { value: 96, unit: '%', label: 'Cuticle Vigor', status: 'optimal', color: '#a7f3d0' }
+      chlorophyll: { value: 92, unit: '%', label: 'Leaf Vitality', detail: 'Vibrant Green', color: '#86efac' },
+      hydration: { value: 84, unit: '%', label: 'Water Level', detail: 'Healthy Moisture', color: '#bae6fd' },
+      solarPAR: { value: 78, unit: '%', label: 'Sunlight', detail: 'Gentle Bright Light', color: '#fef08a' },
+      cuticle: { value: 96, unit: '%', label: 'Leaf Shine', detail: 'Smooth & Protected', color: '#a7f3d0' }
     },
-    tissueData: {
-      transpirationRate: '4.8 mmol/m²s',
-      leafTemp: '21.4°C',
-      stomataStatus: 'Open / Active',
-      pathogenRisk: '0.02'
-    },
+    careTips: [
+      { icon: '💧', title: 'Watering', desc: 'Water thoroughly every 1 to 2 weeks, letting soil dry slightly.' },
+      { icon: '☀️', title: 'Sunlight', desc: 'Filtered bright indirect light keeps fenestrations large.' },
+      { icon: '🌿', title: 'Mist & Dust', desc: 'Mist occasionally if your room has dry winter heating or AC.' },
+      { icon: '🪴', title: 'Growth Support', desc: 'Use a moss pole to guide leaves upward as it matures.' }
+    ],
     pins: [
-      { id: 'p1', x: 38, y: 32, label: 'Apex Fenestration', score: 96, color: '#86efac', note: 'Active cell division' },
-      { id: 'p2', x: 62, y: 48, label: 'Lateral Blade', score: 93, color: '#86efac', note: 'High chlorophyll index' },
-      { id: 'p3', x: 30, y: 65, label: 'Basal Petiole', score: 91, color: '#bae6fd', note: 'Hydration flow balanced' }
+      { id: 'p1', x: 38, y: 32, label: 'Main Leaf Cut', score: 96, color: '#86efac', note: 'Beautiful split leaf' },
+      { id: 'p2', x: 62, y: 48, label: 'Side Blade', score: 93, color: '#86efac', note: 'Healthy chlorophyll' },
+      { id: 'p3', x: 30, y: 65, label: 'Stem Base', score: 91, color: '#bae6fd', note: 'Strong support' }
     ]
   },
   calathea: {
@@ -71,7 +71,7 @@ export const PLANT_PROFILES = {
     commonName: 'Peacock Plant',
     specimenImage: '/assets/specimens/calathea.jpg',
     status: 'warning',
-    statusLabel: 'Hydration Alert',
+    statusLabel: 'Needs Water Soon',
     vigor: 64,
     colorScheme: {
       primary: '#fed7aa',       // Pastel Peach / Apricot
@@ -81,21 +81,21 @@ export const PLANT_PROFILES = {
       glow: 'rgba(254, 215, 170, 0.4)'
     },
     metrics: {
-      chlorophyll: { value: 74, unit: '%', label: 'Chlorophyll', status: 'optimal', color: '#86efac' },
-      hydration: { value: 42, unit: '%', label: 'Turgor Pressure', status: 'warning', color: '#fed7aa' },
-      solarPAR: { value: 65, unit: '%', label: 'Light Exposure', status: 'optimal', color: '#fef08a' },
-      cuticle: { value: 68, unit: '%', label: 'Cuticle Vigor', status: 'warning', color: '#fca5a5' }
+      chlorophyll: { value: 74, unit: '%', label: 'Leaf Vitality', detail: 'Good Color', color: '#86efac' },
+      hydration: { value: 42, unit: '%', label: 'Water Level', detail: 'Soil is Drying Out', color: '#fed7aa' },
+      solarPAR: { value: 65, unit: '%', label: 'Sunlight', detail: 'Mild Shaded Light', color: '#fef08a' },
+      cuticle: { value: 68, unit: '%', label: 'Leaf Shine', detail: 'Tips Curling Slightly', color: '#fca5a5' }
     },
-    tissueData: {
-      transpirationRate: '2.1 mmol/m²s',
-      leafTemp: '23.8°C',
-      stomataStatus: 'Constricted (Water Stress)',
-      pathogenRisk: '0.11'
-    },
+    careTips: [
+      { icon: '💧', title: 'Water Soon', desc: 'Soil is running dry. Give it a gentle drink of filtered water.' },
+      { icon: '🌫️', title: 'Humidity', desc: 'Calatheas love humid air. Mist or place near a humidifier.' },
+      { icon: '☀️', title: 'Low Direct Sun', desc: 'Avoid direct harsh sun to protect the colorful leaf patterns.' },
+      { icon: '💧', title: 'Filtered Water', desc: 'Sensitive to tap water chemicals; use room temp filtered water.' }
+    ],
     pins: [
-      { id: 'c1', x: 44, y: 35, label: 'Central Vein', score: 72, color: '#86efac', note: 'Vascular transport active' },
-      { id: 'c2', x: 72, y: 56, label: 'Leaf Margin', score: 48, color: '#fed7aa', note: 'Incipient tip curl' },
-      { id: 'c3', x: 26, y: 68, label: 'Lower Foliage', score: 55, color: '#fed7aa', note: 'Soil humidity low' }
+      { id: 'c1', x: 44, y: 35, label: 'Center Pattern', score: 72, color: '#86efac', note: 'Good color balance' },
+      { id: 'c2', x: 72, y: 56, label: 'Leaf Edge', score: 48, color: '#fed7aa', note: 'Tip needs moisture' },
+      { id: 'c3', x: 26, y: 68, label: 'Lower Foliage', score: 55, color: '#fed7aa', note: 'Give water soon' }
     ]
   },
   ficus: {
@@ -104,7 +104,7 @@ export const PLANT_PROFILES = {
     commonName: 'Rubber Tree',
     specimenImage: '/assets/specimens/ficus.jpg',
     status: 'mild_stress',
-    statusLabel: 'Nutrient Balance',
+    statusLabel: 'Doing Well',
     vigor: 76,
     colorScheme: {
       primary: '#fef08a',       // Pastel Primrose
@@ -114,21 +114,21 @@ export const PLANT_PROFILES = {
       glow: 'rgba(254, 240, 138, 0.4)'
     },
     metrics: {
-      chlorophyll: { value: 68, unit: '%', label: 'Chlorophyll', status: 'warning', color: '#fef08a' },
-      hydration: { value: 76, unit: '%', label: 'Turgor Pressure', status: 'optimal', color: '#bae6fd' },
-      solarPAR: { value: 88, unit: '%', label: 'Light Exposure', status: 'optimal', color: '#fef08a' },
-      cuticle: { value: 89, unit: '%', label: 'Cuticle Vigor', status: 'optimal', color: '#86efac' }
+      chlorophyll: { value: 68, unit: '%', label: 'Leaf Vitality', detail: 'Moderate Green', color: '#fef08a' },
+      hydration: { value: 76, unit: '%', label: 'Water Level', detail: 'Comfortable', color: '#bae6fd' },
+      solarPAR: { value: 88, unit: '%', label: 'Sunlight', detail: 'Loves Good Light', color: '#fef08a' },
+      cuticle: { value: 89, unit: '%', label: 'Leaf Shine', detail: 'Waxy & Tough', color: '#86efac' }
     },
-    tissueData: {
-      transpirationRate: '3.9 mmol/m²s',
-      leafTemp: '22.1°C',
-      stomataStatus: 'Open',
-      pathogenRisk: '0.04'
-    },
+    careTips: [
+      { icon: '☀️', title: 'Sunlight', desc: 'Place near bright morning light to keep new leaves shiny.' },
+      { icon: '💧', title: 'Watering', desc: 'Let top 2 inches of soil dry before watering thoroughly.' },
+      { icon: '✨', title: 'Dust Leaves', desc: 'Wipe broad leaves with a soft towel once a month.' },
+      { icon: '🪴', title: 'Drainage', desc: 'Ensure pot has a drainage hole to avoid water pooling.' }
+    ],
     pins: [
-      { id: 'f1', x: 48, y: 28, label: 'New Sheath', score: 88, color: '#86efac', note: 'Vigorous emergence' },
-      { id: 'f2', x: 32, y: 52, label: 'Mid Leaf Blade', score: 68, color: '#fef08a', note: 'Mild nitrogen requirement' },
-      { id: 'f3', x: 68, y: 64, label: 'Mature Leaf', score: 79, color: '#bae6fd', note: 'Waxy layer intact' }
+      { id: 'f1', x: 48, y: 28, label: 'New Leaf Sheath', score: 88, color: '#86efac', note: 'New leaf sprouting' },
+      { id: 'f2', x: 32, y: 52, label: 'Upper Blade', score: 68, color: '#fef08a', note: 'Enjoys good light' },
+      { id: 'f3', x: 68, y: 64, label: 'Mature Leaf', score: 79, color: '#bae6fd', note: 'Tough waxy surface' }
     ]
   }
 };

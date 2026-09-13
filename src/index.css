@@ -401,27 +401,30 @@ html, body {
 /* ==========================================================================
    VisionOS Diagnostic Telemetry Cluster (Mode Pills + Floating Card)
    ========================================================================== */
+/* ==========================================================================
+   VisionOS Diagnostic Telemetry Cluster (Mode Pills + Floating Card)
+   ========================================================================== */
 #spatial-card-cluster {
   position: absolute;
-  bottom: 66px;
+  bottom: 54px;
   left: 0;
   right: 0;
   margin: 0 auto;
-  width: calc(100% - 32px);
-  max-width: 380px;
+  width: calc(100% - 24px);
+  max-width: 360px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   z-index: 10;
   pointer-events: none;
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #spatial-card-cluster.cluster-hidden {
   opacity: 0;
-  transform: translateY(50px) scale(0.95);
+  transform: translateY(40px) scale(0.95);
   pointer-events: none;
 }
 
@@ -444,7 +447,7 @@ html, body {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-specular);
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 3px 4px;
   gap: 2px;
 }
@@ -452,22 +455,22 @@ html, body {
 .seg-pill-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
-  border-radius: 18px;
-  padding: 5px 11px;
+  color: rgba(255, 255, 255, 0.65);
+  border-radius: 16px;
+  padding: 4px 10px;
   font-family: inherit;
   font-size: 0.65rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .seg-pill-btn.active {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
@@ -489,11 +492,147 @@ html, body {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-specular), var(--glass-shadow);
-  border-radius: 24px;
-  padding: 14px 16px;
+  border-radius: 20px;
+  padding: 12px 14px;
   position: relative;
   overflow: hidden;
   transition: border-color 0.3s ease;
+}
+
+.compact-hud {
+  padding: 10px 14px;
+  border-radius: 18px;
+}
+
+.compact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.compact-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Left: Score & Mini Rings */
+.compact-rings-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 62px;
+  flex-shrink: 0;
+}
+
+.mini-rings-wrapper {
+  width: 52px;
+  height: 52px;
+  position: relative;
+}
+
+.mini-rings-wrapper .concentric-rings {
+  transform: rotate(-90deg);
+}
+
+.compact-score-num {
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-top: 3px;
+}
+
+.compact-score-label {
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Right: 4 Micro Stat Chips */
+.compact-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  flex-grow: 1;
+}
+
+.compact-stat-chip {
+  background: var(--glass-bg-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  padding: 4px 7px;
+}
+
+.chip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.chip-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.chip-val {
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.chip-bar {
+  width: 100%;
+  height: 2.5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.chip-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+/* Care Tips Grid in Compact HUD */
+.care-tips-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.care-tip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  background: var(--glass-bg-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  padding: 5px 8px;
+}
+
+.tip-icon {
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.tip-text {
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.tip-title {
+  font-weight: 700;
+  color: #ffffff;
+  margin-right: 3px;
+}
+
+.tip-desc {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Minimized Card HUD */
@@ -555,7 +694,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .status-pill {
@@ -565,48 +704,28 @@ html, body {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
-  padding: 4px 10px;
+  padding: 3px 9px;
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--status-color, var(--pastel-mint));
   box-shadow: 0 0 8px var(--status-color, var(--pastel-mint));
 }
 
 .status-text {
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--status-color, var(--pastel-mint));
 }
 
 .specimen-badge {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.7);
   font-style: italic;
-}
-
-/* Vitality Rings Hero Section */
-.vitality-hero {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 16px;
-  padding: 0 4px;
-}
-
-.rings-wrapper {
-  width: 100px;
-  height: 100px;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.concentric-rings {
-  transform: rotate(-90deg);
 }
 
 .ring-bg {

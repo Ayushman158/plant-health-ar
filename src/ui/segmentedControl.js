@@ -7,9 +7,9 @@ export class SegmentedControl {
     this.container = containerEl;
     this.onModeChange = onModeChange;
     this.modes = [
-      { id: 'vigor', label: 'VIGOR', icon: '✦' },
-      { id: 'spectral', label: 'SPECTRAL', icon: '▦' },
-      { id: 'tissue', label: 'TISSUE', icon: '◉' }
+      { id: 'vigor', label: 'Overview', icon: '✦' },
+      { id: 'spectral', label: 'Leaf Scan', icon: '🔍' },
+      { id: 'tissue', label: 'Care Tips', icon: '💡' }
     ];
     this.activeMode = 'vigor';
 

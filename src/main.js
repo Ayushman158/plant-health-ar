@@ -164,7 +164,7 @@ class PlantVisionApp {
             this.isDetected = true;
             this.statusPillEl.classList.remove('idle');
             this.statusPillEl.classList.add('detected');
-            this.statusTextEl.textContent = `${p.name} Detected • ${p.vigor}% Vigor`;
+            this.statusTextEl.textContent = `${p.name} Found • ${p.statusLabel} (${p.vigor}%)`;
 
             this.cardClusterEl.classList.remove('cluster-hidden');
             this.cardClusterEl.classList.add('cluster-visible');
@@ -191,7 +191,7 @@ class PlantVisionApp {
             this.isDetected = false;
             this.statusPillEl.classList.remove('detected');
             this.statusPillEl.classList.add('idle');
-            this.statusTextEl.textContent = 'Scanning for plant...';
+            this.statusTextEl.textContent = "Point camera at your plant's leaves";
 
             this.cardClusterEl.classList.remove('cluster-visible');
             this.cardClusterEl.classList.add('cluster-hidden');

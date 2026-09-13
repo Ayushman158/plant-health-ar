@@ -47,54 +47,78 @@ export class LeafDetector {
       const min = Math.min(r, g, b);
       const delta = max - min;
 
-      // Filter out deep shadows or neutral grays
-      if (max > 28 && delta > 10) {
-        // Fast Hue calculation
-        let hue = 0;
-        if (max === r) {
-          hue = 60 * (((g - b) / delta) % 6);
-        } else if (max === g) {
-          hue = 60 * (((b - r) / delta) + 2);
-        } else {
-          hue = 60 * (((r - g) / delta) + 4);
-        }
-        if (hue < 0) hue += 360;
+      // 1. Reject bright emissive laptop/monitor screens (white/light gray documents or browser)
+      if (r > 155 && g > 155 && b > 155 && delta < 50) {
+        continue;
+      }
 
-        const sat = delta / max;
+      // 2. Reject neutral dark surfaces (laptop chassis, gray keyboards, dark desks)
+      if (max < 34 || delta < 16) {
+        continue;
+      }
 
-        // Botanical foliage criteria:
-        // 1. Hue 55° - 165° (captures yellow-green variegated money plant leaves to deep emerald)
-        // 2. Saturation >= 0.15 (rules out beige walls, floors, skin)
-        // 3. Excess Green Index EGI = 2G - R - B
-        const egi = 2 * g - r - b;
-        const isFoliage = (hue >= 52 && hue <= 165 && sat >= 0.15 && g > 34) ||
-                          (egi > 12 && g > b * 1.12 && g > 38);
+      // Fast Hue calculation
+      let hue = 0;
+      if (max === r) {
+        hue = 60 * (((g - b) / delta) % 6);
+      } else if (max === g) {
+        hue = 60 * (((b - r) / delta) + 2);
+      } else {
+        hue = 60 * (((r - g) / delta) + 4);
+      }
+      if (hue < 0) hue += 360;
 
-        if (isFoliage) {
-          const px = (i / 4) % sw;
-          const py = Math.floor((i / 4) / sw);
+      const sat = delta / max;
+      const egi = 2 * g - r - b;
 
-          greenPixelCount++;
-          sumX += px;
-          sumY += py;
+      // 3. Strict Botanical Foliage Criteria:
+      // Real leaves require genuine chlorophyll absorption:
+      // a) Hue: 58° - 156° (yellow-green variegation through deep emerald)
+      // b) High saturation: sat >= 0.26 (rules out silver/gray laptops, white walls, keyboards)
+      // c) Strong green dominance over blue: g > b * 1.28 (plants strongly absorb blue)
+      // d) Green dominance over red: g >= r * 1.05 and egi >= 16
+      const isFoliage = (hue >= 58 && hue <= 156) &&
+                        (sat >= 0.26) &&
+                        (g >= 40) &&
+                        (g > b * 1.28) &&
+                        (egi >= 16) &&
+                        (g >= r * 1.04);
 
-          if (px < minX) minX = px;
-          if (px > maxX) maxX = px;
-          if (py < minY) minY = py;
-          if (py > maxY) maxY = py;
+      if (isFoliage) {
+        const px = (i / 4) % sw;
+        const py = Math.floor((i / 4) / sw);
 
-          // Relative chlorophyll proxy from green prominence
-          const chloroVal = Math.min(100, Math.max(0, (Math.max(egi, delta) / 120) * 100));
-          sumChlorophyll += chloroVal;
-        }
+        greenPixelCount++;
+        sumX += px;
+        sumY += py;
+
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+
+        // Relative chlorophyll proxy from green prominence
+        const chloroVal = Math.min(100, Math.max(0, (Math.max(egi, delta) / 120) * 100));
+        sumChlorophyll += chloroVal;
       }
     }
 
     const coverage = greenPixelCount / totalPixels;
     this.foliageCoverage = coverage;
 
-    // Minimum coverage threshold: ~2.0% of frame
-    const hasEnoughFoliage = greenPixelCount > totalPixels * 0.02;
+    // Minimum coverage threshold: at least 3.2% of frame
+    let hasEnoughFoliage = greenPixelCount > totalPixels * 0.032;
+
+    // Spatial density check: real plant leaves are cohesive clumps, not scattered screen noise
+    if (hasEnoughFoliage && minX < maxX && minY < maxY) {
+      const boxArea = (maxX - minX + 1) * (maxY - minY + 1);
+      const density = greenPixelCount / boxArea;
+      if (density < 0.16) {
+        hasEnoughFoliage = false;
+      }
+    } else {
+      hasEnoughFoliage = false;
+    }
 
     if (hasEnoughFoliage) {
       this.lostFrames = 0;
@@ -143,28 +167,28 @@ export class LeafDetector {
           id: 'dyn-apex',
           x: Math.round((b.x + b.width * 0.46) * 100),
           y: Math.round((b.y + b.height * 0.26) * 100),
-          label: 'Heart Blade',
+          label: 'Top Leaf',
           score: Math.min(98, Math.max(88, avgChlorophyll + 24)),
           color: '#86efac',
-          note: 'Photosynthetic core'
+          note: 'Healthy new growth'
         },
         {
           id: 'dyn-lateral',
           x: Math.round((b.x + b.width * 0.72) * 100),
           y: Math.round((b.y + b.height * 0.54) * 100),
-          label: 'Variegation Zone',
+          label: 'Leaf Pattern',
           score: Math.min(96, Math.max(85, avgChlorophyll + 20)),
           color: '#86efac',
-          note: 'Carotenoid / green balance'
+          note: 'Rich variegation'
         },
         {
           id: 'dyn-petiole',
           x: Math.round((b.x + b.width * 0.28) * 100),
           y: Math.round((b.y + b.height * 0.72) * 100),
-          label: 'Stem Petiole',
+          label: 'Stem',
           score: Math.min(94, Math.max(82, avgChlorophyll + 16)),
           color: '#bae6fd',
-          note: 'Turgor hydration'
+          note: 'Nicely hydrated'
         }
       ];
 
