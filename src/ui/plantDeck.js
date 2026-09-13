@@ -8,7 +8,7 @@ export class PlantDeck {
     this.container = containerEl;
     this.profiles = plantProfiles;
     this.onSelect = onSelect;
-    this.currentId = 'monstera';
+    this.currentId = 'money_plant';
     this.isLive = false;
 
     this.render();
@@ -43,7 +43,7 @@ export class PlantDeck {
               class="specimen-chip ${isActive ? 'active' : ''}" 
               data-plant-id="${p.id}">
               <span class="chip-dot" style="background: ${p.colorScheme.primary};"></span>
-              <span class="chip-text">${p.name.split(' ')[0]}</span>
+              <span class="chip-text">${p.name}</span>
             </button>
           `;
         }).join('')}

@@ -17,11 +17,16 @@ class PlantVisionApp {
     this.scanFrameEl = document.getElementById('spatial-scan-frame');
     this.pinsContainer = document.getElementById('spatial-pins-layer');
     this.cardAnchorEl = document.getElementById('spatial-card-anchor');
+    this.cardClusterEl = document.getElementById('spatial-card-cluster');
+    this.statusPillEl = document.getElementById('spatial-status-pill');
+    this.statusTextEl = this.statusPillEl.querySelector('.status-text-content');
     this.segContainer = document.getElementById('mode-segmented-control');
     this.deckContainer = document.getElementById('specimen-deck-container');
+    this.specimensToggleBtn = document.getElementById('specimens-toggle-btn');
 
-    this.activePlantId = 'monstera';
+    this.activePlantId = 'money_plant';
     this.activeMode = 'vigor';
+    this.isDetected = false;
 
     this.cameraStream = new CameraStream(this.videoEl, this.displayCanvas);
     this.leafDetector = new LeafDetector();
@@ -29,6 +34,13 @@ class PlantVisionApp {
     this.parallax = new GyroParallax(this.cardAnchorEl);
 
     this.glassCards = new GlassCards(this.cardAnchorEl);
+    this.glassCards.onMinimizeToggle = (minimized) => {
+      if (minimized) {
+        this.cardClusterEl.classList.add('is-minimized');
+      } else {
+        this.cardClusterEl.classList.remove('is-minimized');
+      }
+    };
     this.pinManager = new PinManager(this.pinsContainer, (selectedPin) => {
       this.onLeafPinSelected(selectedPin);
     });
@@ -41,7 +53,27 @@ class PlantVisionApp {
       this.onSourceSelected(selection);
     });
 
+    this.initDrawer();
     this.init();
+  }
+
+  initDrawer() {
+    if (!this.specimensToggleBtn) return;
+    this.specimensToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.deckContainer.classList.toggle('collapsed');
+      const isCollapsed = this.deckContainer.classList.contains('collapsed');
+      const arrow = this.specimensToggleBtn.querySelector('.specimen-arrow');
+      if (arrow) arrow.textContent = isCollapsed ? '▾' : '▴';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.specimens-trigger-wrapper')) {
+        this.deckContainer.classList.add('collapsed');
+        const arrow = this.specimensToggleBtn.querySelector('.specimen-arrow');
+        if (arrow) arrow.textContent = '▾';
+      }
+    });
   }
 
   async init() {
@@ -85,6 +117,11 @@ class PlantVisionApp {
   }
 
   async onSourceSelected(selection) {
+    // Collapse drawer after user picks
+    this.deckContainer.classList.add('collapsed');
+    const arrow = this.specimensToggleBtn?.querySelector('.specimen-arrow');
+    if (arrow) arrow.textContent = '▾';
+
     if (selection === 'camera') {
       const ok = await this.cameraStream.startCamera();
       if (!ok) {
@@ -99,7 +136,6 @@ class PlantVisionApp {
 
   onLeafPinSelected(pin) {
     if (!pin) return;
-    // Highlight or pulse card
     const card = this.cardAnchorEl.querySelector('.visionos-card');
     if (card) {
       card.style.transform = 'scale(1.02)';
@@ -121,18 +157,56 @@ class PlantVisionApp {
 
         if (analysis && analysis.detected) {
           const b = analysis.box;
-          this.scanFrameEl.style.display = 'block';
+          const p = PLANT_PROFILES[this.activePlantId] || PLANT_PROFILES.money_plant;
+
+          // Transition to DETECTED state
+          if (!this.isDetected) {
+            this.isDetected = true;
+            this.statusPillEl.classList.remove('idle');
+            this.statusPillEl.classList.add('detected');
+            this.statusTextEl.textContent = `${p.name} Detected • ${p.vigor}% Vigor`;
+
+            this.cardClusterEl.classList.remove('cluster-hidden');
+            this.cardClusterEl.classList.add('cluster-visible');
+
+            this.pinsContainer.classList.add('visible');
+
+            this.scanFrameEl.classList.remove('idle');
+            this.scanFrameEl.classList.add('locked');
+          }
+
+          // Smoothly track detected plant foliage box
           this.scanFrameEl.style.left = `${b.x * 100}%`;
           this.scanFrameEl.style.top = `${b.y * 100}%`;
           this.scanFrameEl.style.width = `${b.width * 100}%`;
           this.scanFrameEl.style.height = `${b.height * 100}%`;
+
+          // Dynamically anchor AR pins on detected plant foliage
+          if (analysis.dynamicPins && analysis.dynamicPins.length > 0) {
+            this.pinManager.setPins(analysis.dynamicPins);
+          }
         } else {
-          // Keep a soft scanning reticle centered
-          this.scanFrameEl.style.display = 'block';
-          this.scanFrameEl.style.left = '16%';
-          this.scanFrameEl.style.top = '16%';
-          this.scanFrameEl.style.width = '68%';
-          this.scanFrameEl.style.height = '68%';
+          // Transition to IDLE / SCANNING state (clean transparent view)
+          if (this.isDetected) {
+            this.isDetected = false;
+            this.statusPillEl.classList.remove('detected');
+            this.statusPillEl.classList.add('idle');
+            this.statusTextEl.textContent = 'Scanning for plant...';
+
+            this.cardClusterEl.classList.remove('cluster-visible');
+            this.cardClusterEl.classList.add('cluster-hidden');
+
+            this.pinsContainer.classList.remove('visible');
+
+            this.scanFrameEl.classList.remove('locked');
+            this.scanFrameEl.classList.add('idle');
+          }
+
+          // Subtle, delicate central scanning area
+          this.scanFrameEl.style.left = '18%';
+          this.scanFrameEl.style.top = '22%';
+          this.scanFrameEl.style.width = '64%';
+          this.scanFrameEl.style.height = '56%';
         }
 
         // 3. If in Spectral NDVI mode, render false-color infrared frame

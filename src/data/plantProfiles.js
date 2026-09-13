@@ -1,4 +1,37 @@
 export const PLANT_PROFILES = {
+  money_plant: {
+    id: 'money_plant',
+    name: 'Money Plant',
+    commonName: 'Epipremnum Aureum (Devil\'s Ivy)',
+    specimenImage: '/assets/specimens/pothos.jpg',
+    status: 'optimal',
+    statusLabel: 'Optimal Foliage',
+    vigor: 93,
+    colorScheme: {
+      primary: '#86efac',       // Pastel Mint
+      secondary: '#a7f3d0',
+      surface: 'rgba(134, 239, 172, 0.14)',
+      border: 'rgba(134, 239, 172, 0.35)',
+      glow: 'rgba(134, 239, 172, 0.4)'
+    },
+    metrics: {
+      chlorophyll: { value: 91, unit: '%', label: 'Chlorophyll', status: 'optimal', color: '#86efac' },
+      hydration: { value: 85, unit: '%', label: 'Turgor Pressure', status: 'optimal', color: '#bae6fd' },
+      solarPAR: { value: 78, unit: '%', label: 'Ambient Light Flux', status: 'optimal', color: '#fef08a' },
+      cuticle: { value: 95, unit: '%', label: 'Cuticle Vigor', status: 'optimal', color: '#86efac' }
+    },
+    tissueData: {
+      transpirationRate: '4.5 mmol/m²s',
+      leafTemp: '22.0°C',
+      stomataStatus: 'Open / Transpiring',
+      pathogenRisk: '0.01'
+    },
+    pins: [
+      { id: 'mp1', x: 48, y: 38, label: 'Heart Blade', score: 95, color: '#86efac', note: 'Active chlorophyll synthesis' },
+      { id: 'mp2', x: 30, y: 55, label: 'Variegation Zone', score: 92, color: '#86efac', note: 'Carotenoid / green balance' },
+      { id: 'mp3', x: 65, y: 68, label: 'Petiole Runner', score: 89, color: '#bae6fd', note: 'Turgor pressure robust' }
+    ]
+  },
   monstera: {
     id: 'monstera',
     name: 'Monstera Deliciosa',
@@ -96,39 +129,6 @@ export const PLANT_PROFILES = {
       { id: 'f1', x: 48, y: 28, label: 'New Sheath', score: 88, color: '#86efac', note: 'Vigorous emergence' },
       { id: 'f2', x: 32, y: 52, label: 'Mid Leaf Blade', score: 68, color: '#fef08a', note: 'Mild nitrogen requirement' },
       { id: 'f3', x: 68, y: 64, label: 'Mature Leaf', score: 79, color: '#bae6fd', note: 'Waxy layer intact' }
-    ]
-  },
-  pothos: {
-    id: 'pothos',
-    name: 'Epipremnum Aureum',
-    commonName: 'Golden Pothos',
-    specimenImage: '/assets/specimens/pothos.jpg',
-    status: 'optimal',
-    statusLabel: 'Vigorous Growth',
-    vigor: 91,
-    colorScheme: {
-      primary: '#86efac',       // Pastel Mint
-      secondary: '#a7f3d0',
-      surface: 'rgba(134, 239, 172, 0.14)',
-      border: 'rgba(134, 239, 172, 0.35)',
-      glow: 'rgba(134, 239, 172, 0.4)'
-    },
-    metrics: {
-      chlorophyll: { value: 90, unit: '%', label: 'Chlorophyll', status: 'optimal', color: '#86efac' },
-      hydration: { value: 82, unit: '%', label: 'Turgor Pressure', status: 'optimal', color: '#bae6fd' },
-      solarPAR: { value: 74, unit: '%', label: 'Light Exposure', status: 'optimal', color: '#fef08a' },
-      cuticle: { value: 94, unit: '%', label: 'Cuticle Vigor', status: 'optimal', color: '#86efac' }
-    },
-    tissueData: {
-      transpirationRate: '4.4 mmol/m²s',
-      leafTemp: '21.8°C',
-      stomataStatus: 'Optimal Transpiration',
-      pathogenRisk: '0.01'
-    },
-    pins: [
-      { id: 'po1', x: 46, y: 38, label: 'Variegated Heart', score: 94, color: '#86efac', note: 'Golden pigment vibrant' },
-      { id: 'po2', x: 28, y: 58, label: 'Trailing Runner', score: 92, color: '#86efac', note: 'Internode length optimal' },
-      { id: 'po3', x: 65, y: 72, label: 'Aerial Node', score: 88, color: '#bae6fd', note: 'Root primordium active' }
     ]
   }
 };

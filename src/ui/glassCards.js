@@ -8,6 +8,7 @@ export class GlassCards {
     this.container = containerEl;
     this.currentPlant = null;
     this.activeMode = 'vigor'; // 'vigor' | 'spectral' | 'tissue'
+    this.isMinimized = false;
   }
 
   setPlant(plantData) {
@@ -20,22 +21,59 @@ export class GlassCards {
     this.render();
   }
 
+  toggleMinimize() {
+    this.isMinimized = !this.isMinimized;
+    this.render();
+    if (this.onMinimizeToggle) {
+      this.onMinimizeToggle(this.isMinimized);
+    }
+  }
+
   render() {
     if (!this.currentPlant) return;
     const p = this.currentPlant;
 
+    if (this.isMinimized) {
+      this.renderMinimizedHUD(p);
+      return;
+    }
+
     if (this.activeMode === 'spectral') {
       this.renderSpectralHUD(p);
+      this.bindHeaderActions();
       return;
     }
 
     if (this.activeMode === 'tissue') {
       this.renderTissueHUD(p);
+      this.bindHeaderActions();
       return;
     }
 
     // Default: 'vigor' mode
     this.renderVigorHUD(p);
+    this.bindHeaderActions();
+  }
+
+  renderMinimizedHUD(p) {
+    this.container.innerHTML = `
+      <div class="visionos-card glass-panel minimized-pill-card" style="--accent-color: ${p.colorScheme.primary}">
+        <div class="minimized-inner-row">
+          <span class="status-dot" style="background: ${p.colorScheme.primary}"></span>
+          <span class="min-name">${p.name}</span>
+          <span class="min-score" style="color: ${p.colorScheme.primary}">${p.vigor}% VIGOR</span>
+          <button type="button" class="btn-expand-card" aria-label="Expand card">▲</button>
+        </div>
+      </div>
+    `;
+
+    const expandBtn = this.container.querySelector('.btn-expand-card');
+    if (expandBtn) {
+      expandBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleMinimize();
+      });
+    }
   }
 
   renderVigorHUD(p) {
@@ -43,17 +81,17 @@ export class GlassCards {
     const m = metrics;
 
     // SVG Ring Geometry
-    const size = 100;
-    const strokeWidth = 7;
-    const radiusOuter = 42;
+    const size = 88;
+    const strokeWidth = 6.5;
+    const radiusOuter = 37;
     const circOuter = 2 * Math.PI * radiusOuter;
     const offsetOuter = circOuter - (circOuter * vigor) / 100;
 
-    const radiusMid = 31;
+    const radiusMid = 27;
     const circMid = 2 * Math.PI * radiusMid;
     const offsetMid = circMid - (circMid * m.hydration.value) / 100;
 
-    const radiusInner = 20;
+    const radiusInner = 17;
     const circInner = 2 * Math.PI * radiusInner;
     const offsetInner = circInner - (circInner * m.chlorophyll.value) / 100;
 
@@ -65,7 +103,10 @@ export class GlassCards {
             <span class="status-dot"></span>
             <span class="status-text">${p.statusLabel.toUpperCase()}</span>
           </div>
-          <div class="specimen-badge">${p.name}</div>
+          <div class="card-header-actions">
+            <span class="specimen-badge">${p.name}</span>
+            <button type="button" class="btn-minimize-card" aria-label="Minimize card">▾</button>
+          </div>
         </div>
 
         <!-- Central Vitality Activity Rings & Big Score -->
@@ -73,26 +114,26 @@ export class GlassCards {
           <div class="rings-wrapper">
             <svg class="concentric-rings" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
               <!-- Background Tracks -->
-              <circle class="ring-bg" cx="50" cy="50" r="${radiusOuter}" stroke-width="${strokeWidth}" />
-              <circle class="ring-bg" cx="50" cy="50" r="${radiusMid}" stroke-width="${strokeWidth}" />
-              <circle class="ring-bg" cx="50" cy="50" r="${radiusInner}" stroke-width="${strokeWidth}" />
+              <circle class="ring-bg" cx="44" cy="44" r="${radiusOuter}" stroke-width="${strokeWidth}" />
+              <circle class="ring-bg" cx="44" cy="44" r="${radiusMid}" stroke-width="${strokeWidth}" />
+              <circle class="ring-bg" cx="44" cy="44" r="${radiusInner}" stroke-width="${strokeWidth}" />
 
               <!-- Outer: Overall Vigor (Pastel Mint / Peach) -->
-              <circle class="ring-bar ring-vigor" cx="50" cy="50" r="${radiusOuter}"
+              <circle class="ring-bar ring-vigor" cx="44" cy="44" r="${radiusOuter}"
                 stroke-width="${strokeWidth}"
                 stroke="${colorScheme.primary}"
                 stroke-dasharray="${circOuter}"
                 stroke-dashoffset="${offsetOuter}" />
 
               <!-- Middle: Hydration (Pastel Ice Blue) -->
-              <circle class="ring-bar ring-hydra" cx="50" cy="50" r="${radiusMid}"
+              <circle class="ring-bar ring-hydra" cx="44" cy="44" r="${radiusMid}"
                 stroke-width="${strokeWidth}"
                 stroke="#bae6fd"
                 stroke-dasharray="${circMid}"
                 stroke-dashoffset="${offsetMid}" />
 
               <!-- Inner: Chlorophyll (Pastel Emerald) -->
-              <circle class="ring-bar ring-chloro" cx="50" cy="50" r="${radiusInner}"
+              <circle class="ring-bar ring-chloro" cx="44" cy="44" r="${radiusInner}"
                 stroke-width="${strokeWidth}"
                 stroke="#86efac"
                 stroke-dasharray="${circInner}"
@@ -142,7 +183,7 @@ export class GlassCards {
             <div class="tile-bar-bg">
               <div class="tile-bar-fill" style="width: ${m.solarPAR.value}%; background: #fef08a;"></div>
             </div>
-            <div class="tile-name">SOLAR FLUX</div>
+            <div class="tile-name">LIGHT PAR</div>
           </div>
 
           <!-- 4. Cuticle Vigor -->
@@ -157,13 +198,18 @@ export class GlassCards {
             <div class="tile-name">CUTICLE</div>
           </div>
         </div>
-
-        <!-- Quick Hint -->
-        <div class="card-footer-tip">
-          <span>Tap leaf for spatial telemetry</span>
-        </div>
       </div>
     `;
+  }
+
+  bindHeaderActions() {
+    const minBtn = this.container.querySelector('.btn-minimize-card');
+    if (minBtn) {
+      minBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleMinimize();
+      });
+    }
   }
 
   renderSpectralHUD(p) {

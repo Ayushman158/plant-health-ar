@@ -114,18 +114,36 @@ html, body {
   position: absolute;
   z-index: 4;
   pointer-events: none;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(134, 239, 172, 0.25);
+  transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              top 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
   border-radius: 20px;
-  box-shadow: 0 0 24px -4px rgba(134, 239, 172, 0.2);
+}
+
+#spatial-scan-frame.idle {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+#spatial-scan-frame.locked {
+  border: 1.5px solid rgba(134, 239, 172, 0.45);
+  box-shadow: 0 0 28px -4px rgba(134, 239, 172, 0.35);
 }
 
 .scan-corner {
   position: absolute;
   width: 18px;
   height: 18px;
-  border-color: var(--pastel-mint);
+  border-color: rgba(255, 255, 255, 0.35);
   border-style: solid;
+  transition: border-color 0.3s ease;
+}
+
+#spatial-scan-frame.locked .scan-corner {
+  border-color: var(--pastel-mint);
 }
 
 .scan-corner.tl { top: -2px; left: -2px; border-width: 2.5px 0 0 2.5px; border-top-left-radius: 14px; }
@@ -142,6 +160,12 @@ html, body {
   background: linear-gradient(90deg, transparent, var(--pastel-mint), transparent);
   box-shadow: 0 0 8px var(--pastel-mint);
   animation: laserSweep 3.2s ease-in-out infinite alternate;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#spatial-scan-frame.locked .scan-laser-line {
+  opacity: 0.85;
 }
 
 @keyframes laserSweep {
@@ -158,8 +182,31 @@ html, body {
   width: 8px;
   height: 8px;
   transform: translate(-50%, -50%);
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
+}
+
+.scan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 24, 34, 0.85);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(134, 239, 172, 0.4);
+  color: var(--pastel-mint);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 9px;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  white-space: nowrap;
+}
+
+#spatial-scan-frame.locked .scan-badge {
+  opacity: 1;
 }
 
 /* ==========================================================================
@@ -169,6 +216,13 @@ html, body {
   position: absolute;
   inset: 0;
   z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+#spatial-pins-layer.visible {
+  opacity: 1;
   pointer-events: auto;
 }
 
@@ -276,16 +330,16 @@ html, body {
   pointer-events: none;
 }
 
-/* Top Bar: Minimal Logo / Brand & VisionOS Mode Switcher */
+/* Top Bar: Single Sleek Status Capsule */
 .spatial-top-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   width: 100%;
   pointer-events: auto;
 }
 
-.app-branding-pill {
+.status-capsule {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -293,20 +347,92 @@ html, body {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular);
-  border-radius: 20px;
-  padding: 6px 14px;
+  box-shadow: var(--glass-specular), 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 24px;
+  padding: 8px 18px;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.brand-leaf-icon {
-  font-size: 0.95rem;
+.status-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
 }
 
-.brand-text {
-  font-size: 0.72rem;
+.status-capsule.idle {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.status-capsule.idle .status-pulse-dot {
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  animation: pulseIdle 2.2s infinite ease-in-out;
+}
+
+.status-capsule.detected {
+  border-color: rgba(134, 239, 172, 0.45);
+  box-shadow: var(--glass-specular), 0 0 20px -2px rgba(134, 239, 172, 0.35);
+}
+
+.status-capsule.detected .status-pulse-dot {
+  background: var(--pastel-mint);
+  box-shadow: 0 0 10px var(--pastel-mint);
+  animation: pulseGreen 1.8s infinite ease-in-out;
+}
+
+.status-text-content {
+  font-size: 0.74rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   color: #ffffff;
+}
+
+@keyframes pulseIdle {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 0.9; transform: scale(1.1); }
+}
+
+@keyframes pulseGreen {
+  0%, 100% { transform: scale(0.9); opacity: 0.85; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+
+/* ==========================================================================
+   VisionOS Diagnostic Telemetry Cluster (Mode Pills + Floating Card)
+   ========================================================================== */
+#spatial-card-cluster {
+  position: absolute;
+  bottom: 66px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: calc(100% - 32px);
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#spatial-card-cluster.cluster-hidden {
+  opacity: 0;
+  transform: translateY(50px) scale(0.95);
+  pointer-events: none;
+}
+
+#spatial-card-cluster.cluster-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+#spatial-card-cluster.is-minimized #mode-segmented-control {
+  display: none;
 }
 
 /* VisionOS Segmented Control (Mode Pills) */
@@ -319,7 +445,7 @@ html, body {
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-specular);
   border-radius: 24px;
-  padding: 4px;
+  padding: 3px 4px;
   gap: 2px;
 }
 
@@ -328,9 +454,9 @@ html, body {
   border: none;
   color: rgba(255, 255, 255, 0.6);
   border-radius: 18px;
-  padding: 6px 12px;
+  padding: 5px 11px;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -350,15 +476,9 @@ html, body {
   transform: scale(0.96);
 }
 
-/* ==========================================================================
-   VisionOS 3D Floating Diagnostic Card
-   ========================================================================== */
+/* VisionOS 3D Floating Diagnostic Card Anchor */
 #spatial-card-anchor {
-  align-self: flex-end;
-  margin-top: auto;
-  margin-bottom: 12px;
   width: 100%;
-  max-width: 380px;
   pointer-events: auto;
   perspective: 1200px;
 }
@@ -370,10 +490,64 @@ html, body {
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-specular), var(--glass-shadow);
   border-radius: 24px;
-  padding: 16px;
+  padding: 14px 16px;
   position: relative;
   overflow: hidden;
   transition: border-color 0.3s ease;
+}
+
+/* Minimized Card HUD */
+.minimized-pill-card {
+  padding: 8px 14px !important;
+  border-radius: 20px !important;
+  margin: 0 auto;
+}
+
+.minimized-inner-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.min-name {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.min-score {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-minimize-card,
+.btn-expand-card {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 0.68rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-minimize-card:hover,
+.btn-expand-card:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 /* Card Header */
@@ -381,7 +555,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .status-pill {
@@ -403,14 +577,14 @@ html, body {
 }
 
 .status-text {
-  font-size: 0.65rem;
+  font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--status-color, var(--pastel-mint));
 }
 
 .specimen-badge {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.7);
   font-style: italic;
 }
@@ -608,13 +782,70 @@ html, body {
 }
 
 /* ==========================================================================
-   Specimen Deck & Bottom Controls Bar
+   Specimen Deck & Collapsible Bottom Drawer
    ========================================================================== */
 .spatial-bottom-bar {
   display: flex;
   justify-content: center;
+  align-items: center;
   width: 100%;
   pointer-events: auto;
+  position: relative;
+  z-index: 20;
+}
+
+.specimens-trigger-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.specimens-toggle-pill {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-specular), 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.specimens-toggle-pill:hover,
+.specimens-toggle-pill:active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.specimen-icon {
+  font-size: 0.85rem;
+}
+
+.specimen-arrow {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.specimens-drawer {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  z-index: 25;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.specimens-drawer.collapsed {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .specimen-deck-bar {
@@ -624,12 +855,12 @@ html, body {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular);
+  box-shadow: var(--glass-specular), 0 12px 32px rgba(0, 0, 0, 0.6);
   border-radius: 24px;
   padding: 5px 8px;
   gap: 6px;
   overflow-x: auto;
-  max-width: 96vw;
+  max-width: 94vw;
 }
 
 .deck-divider {
@@ -680,9 +911,9 @@ html, body {
     padding: 24px 32px;
   }
 
-  #spatial-card-anchor {
+  #spatial-card-cluster {
     max-width: 420px;
-    margin-bottom: 20px;
+    bottom: 72px;
   }
 
   .vitality-hero {

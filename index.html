@@ -24,13 +24,14 @@
     </div>
 
     <!-- Spatial Bio-Scanning Reticle Frame -->
-    <div id="spatial-scan-frame">
+    <div id="spatial-scan-frame" class="idle">
       <div class="scan-corner tl"></div>
       <div class="scan-corner tr"></div>
       <div class="scan-corner bl"></div>
       <div class="scan-corner br"></div>
       <div class="scan-laser-line"></div>
       <div class="scan-crosshair"></div>
+      <div class="scan-badge">FOLIAGE LOCKED</div>
     </div>
 
     <!-- Interactive Spatial Leaf Pins Layer -->
@@ -38,23 +39,33 @@
 
     <!-- VisionOS Spatial Chrome UI -->
     <div id="spatial-ui-root">
-      <!-- Top Bar -->
+      <!-- Top Bar: Single sleek scanning status capsule -->
       <header class="spatial-top-bar">
-        <div class="app-branding-pill">
-          <span class="brand-leaf-icon">🪴</span>
-          <span class="brand-text">PLANT VISION</span>
+        <div id="spatial-status-pill" class="status-capsule idle">
+          <span class="status-pulse-dot"></span>
+          <span class="status-text-content">Scanning for plant...</span>
         </div>
-
-        <!-- VisionOS Segmented Mode Switcher (VIGOR | SPECTRAL | TISSUE) -->
-        <div id="mode-segmented-control"></div>
       </header>
 
-      <!-- VisionOS Floating 3D Telemetry Card Anchor -->
-      <div id="spatial-card-anchor"></div>
+      <!-- Center / Bottom: Floating Diagnostic Telemetry Unit -->
+      <div id="spatial-card-cluster" class="cluster-hidden">
+        <!-- VisionOS Segmented Mode Switcher (VIGOR | SPECTRAL | TISSUE) -->
+        <div id="mode-segmented-control"></div>
 
-      <!-- Bottom Bar: Specimen Deck Carousel -->
+        <!-- VisionOS Floating 3D Telemetry Card Anchor -->
+        <div id="spatial-card-anchor"></div>
+      </div>
+
+      <!-- Bottom Bar: Minimal Collapsible Specimen Drawer -->
       <footer class="spatial-bottom-bar">
-        <div id="specimen-deck-container"></div>
+        <div class="specimens-trigger-wrapper">
+          <button id="specimens-toggle-btn" type="button" class="specimens-toggle-pill" aria-label="Toggle botanical specimens">
+            <span class="specimen-icon">🌿</span>
+            <span class="specimen-btn-label">Presets</span>
+            <span class="specimen-arrow">▾</span>
+          </button>
+          <div id="specimen-deck-container" class="specimens-drawer collapsed"></div>
+        </div>
       </footer>
     </div>
   </main>
