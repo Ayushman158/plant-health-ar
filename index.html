@@ -83,20 +83,27 @@
         </div>
       </header>
 
-      <!-- Floating Minimal Condition Card (Planto Style) -->
+      <!-- Floating Minimal Condition Card (Planto Style, Mobile Collapsible) -->
       <section id="condition-card-anchor" class="condition-card-anchor" aria-label="Specimen Telemetry">
         <div id="condition-card" class="planto-condition-card">
           <div class="card-top-row">
-            <div class="condition-title-wrap">
+            <div class="condition-title-wrap" id="condition-card-header-toggle" role="button" tabindex="0" aria-label="Toggle telemetry cards">
               <span class="card-heading">Foliage Vitality</span>
               <span class="card-subheading" id="card-status-sub">Optimal & Thriving</span>
             </div>
-            <button type="button" id="expand-prescription-btn" class="btn-card-chevron" aria-label="View clinical prescription">
-              <span>Diagnosis</span>
-              <svg class="chevron-mini-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+            <div class="card-top-actions">
+              <button type="button" id="toggle-telemetry-btn" class="btn-card-toggle" aria-label="Toggle telemetry metrics" aria-expanded="true">
+                <svg class="fold-icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+              </button>
+              <button type="button" id="expand-prescription-btn" class="btn-card-chevron" aria-label="View clinical prescription">
+                <span>Diagnosis</span>
+                <svg class="chevron-mini-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div class="condition-metrics-grid">

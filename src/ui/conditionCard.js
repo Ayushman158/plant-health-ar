@@ -32,6 +32,11 @@ export class ConditionCard {
     this.anchor = cardAnchorEl;
     this.modal = prescriptionModalEl;
 
+    this.cardEl = cardAnchorEl.querySelector('#condition-card');
+    this.toggleBtn = cardAnchorEl.querySelector('#toggle-telemetry-btn');
+    this.headerToggle = cardAnchorEl.querySelector('#condition-card-header-toggle');
+    this.isCollapsed = false;
+
     this.valWater = cardAnchorEl.querySelector('#val-water');
     this.valLight = cardAnchorEl.querySelector('#val-light');
     this.valVigor = cardAnchorEl.querySelector('#val-vigor');
@@ -51,6 +56,31 @@ export class ConditionCard {
   }
 
   initEvents() {
+    const toggleCollapse = (e) => {
+      e.stopPropagation();
+      this.isCollapsed = !this.isCollapsed;
+      if (this.cardEl) {
+        this.cardEl.classList.toggle('minimized', this.isCollapsed);
+      }
+      if (this.toggleBtn) {
+        this.toggleBtn.setAttribute('aria-expanded', !this.isCollapsed);
+        const icon = this.toggleBtn.querySelector('.fold-icon-svg');
+        if (icon) {
+          icon.innerHTML = this.isCollapsed
+            ? `<polyline points="6 9 12 15 18 9"></polyline>`
+            : `<polyline points="18 15 12 9 6 15"></polyline>`;
+        }
+      }
+      if (navigator.vibrate) navigator.vibrate(12);
+    };
+
+    if (this.toggleBtn) {
+      this.toggleBtn.addEventListener('click', toggleCollapse);
+    }
+    if (this.headerToggle) {
+      this.headerToggle.addEventListener('click', toggleCollapse);
+    }
+
     if (this.expandBtn) {
       this.expandBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -71,6 +101,19 @@ export class ConditionCard {
           this.closePrescription();
         }
       });
+
+      // Mobile touch swipe-down to dismiss sheet
+      let touchStartY = 0;
+      this.modal.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      this.modal.addEventListener('touchend', (e) => {
+        const touchEndY = e.changedTouches[0].clientY;
+        if (touchEndY - touchStartY > 70) {
+          this.closePrescription();
+        }
+      }, { passive: true });
     }
   }
 

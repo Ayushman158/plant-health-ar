@@ -37,6 +37,19 @@ export class AiDocModal {
       this.modal.addEventListener('click', (e) => {
         if (e.target === this.modal) this.close();
       });
+
+      // Mobile touch swipe-down to dismiss sheet
+      let touchStartY = 0;
+      this.modal.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      this.modal.addEventListener('touchend', (e) => {
+        const touchEndY = e.changedTouches[0].clientY;
+        if (touchEndY - touchStartY > 70) {
+          this.close();
+        }
+      }, { passive: true });
     }
 
     if (this.form) {

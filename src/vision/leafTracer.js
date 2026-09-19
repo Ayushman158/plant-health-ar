@@ -26,18 +26,22 @@ export class LeafTracer {
   }
 
   initPointerListener() {
-    const onMove = (e) => {
+    const onPointer = (e) => {
       const rect = this.canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      if (!rect.width || !rect.height) return;
+
+      const touch = e.touches && e.touches.length > 0 ? e.touches[0] : e;
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const x = (touch.clientX - rect.left) * scaleX;
+      const y = (touch.clientY - rect.top) * scaleY;
 
       this.addPixelTrail(x, y);
     };
 
-    window.addEventListener('mousemove', onMove, { passive: true });
-    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('mousemove', onPointer, { passive: true });
+    window.addEventListener('touchstart', onPointer, { passive: true });
+    window.addEventListener('touchmove', onPointer, { passive: true });
   }
 
   addPixelTrail(x, y) {
