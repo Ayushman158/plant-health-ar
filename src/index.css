@@ -1,32 +1,32 @@
 /* ==========================================================================
-   PLANT VISION AR — Apple VisionOS Spatial Design System
-   Pastel Semantic Palette | Minimalist Visual Telemetry | Deep Frosted Glass
+   MONEY PLANT DOC — Minimalist Botanical Health & Care System
+   Inspired by Planto (clean cards & plant speech), Claryx (dot-matrix floral tracing),
+   and Fancy Components (pixel-trail particle interactions)
    ========================================================================== */
 
 :root {
-  /* Pastel Semantic Health Palette */
-  --pastel-mint: #86efac;
-  --pastel-mint-soft: rgba(134, 239, 172, 0.16);
-  --pastel-peach: #fed7aa;
-  --pastel-peach-soft: rgba(254, 215, 170, 0.16);
-  --pastel-coral: #fca5a5;
-  --pastel-coral-soft: rgba(252, 165, 165, 0.16);
-  --pastel-ice: #bae6fd;
-  --pastel-ice-soft: rgba(186, 230, 253, 0.16);
-  --pastel-butter: #fef08a;
-  --pastel-butter-soft: rgba(254, 240, 138, 0.16);
-  --pastel-sage: #a7f3d0;
+  /* Botanical Semantic Palette */
+  --mint-primary: #86efac;
+  --mint-glow: rgba(134, 239, 172, 0.45);
+  --mint-subtle: rgba(134, 239, 172, 0.12);
+  --emerald: #22c55e;
+  
+  --peach-warning: #fed7aa;
+  --coral-alert: #fca5a5;
+  --ice-water: #bae6fd;
+  --sun-butter: #fef08a;
 
-  /* VisionOS Glass Tokens */
-  --glass-bg: rgba(18, 24, 34, 0.72);
-  --glass-bg-subtle: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.16);
-  --glass-specular: inset 0 1px 1px rgba(255, 255, 255, 0.28);
-  --glass-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.2);
+  /* Frosted Glass & Surface Tokens */
+  --bg-obsidian: #070c0a;
+  --glass-card-bg: rgba(15, 23, 19, 0.76);
+  --glass-card-border: rgba(255, 255, 255, 0.14);
+  --glass-card-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.18);
   --glass-blur: blur(28px) saturate(190%);
 
   /* Typography */
-  --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, sans-serif;
+  --font-brand: 'Outfit', sans-serif;
+  --font-ui: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 *, *::before, *::after {
@@ -35,22 +35,21 @@
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
 }
 
 html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #05080c;
-  font-family: var(--font-system);
+  background-color: var(--bg-obsidian);
+  font-family: var(--font-ui);
   color: #ffffff;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ==========================================================================
-   Main Application Viewport
+   Main Viewport
    ========================================================================== */
 #app-viewport {
   position: relative;
@@ -63,1034 +62,1049 @@ html, body {
   justify-content: space-between;
 }
 
-/* Camera & Specimen Video Canvas */
+/* ==========================================================================
+   Media Layer & Canvases
+   ========================================================================== */
 #media-layer {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background-color: #000;
   z-index: 1;
-  background: #000;
 }
 
 #camera-video {
   display: none;
 }
 
-#display-canvas,
+#display-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.4s ease;
+}
+
+/* Real-time Dot-Matrix / ASCII Leaf Tracing & Pixel-Trail Canvas */
+#tracer-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* NDVI Spectral Scan Canvas */
 #spectral-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-#spectral-canvas {
   opacity: 0;
-  transition: opacity 0.35s ease;
   pointer-events: none;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  mix-blend-mode: screen;
+  z-index: 3;
 }
 
 #spectral-canvas.active {
-  opacity: 1;
+  opacity: 0.92;
 }
 
-/* Subtle Vignette & Atmospheric Depth Overlay */
 .viewport-ambient-vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
-  background: radial-gradient(circle at center, transparent 40%, rgba(5, 8, 12, 0.45) 90%),
-              linear-gradient(to bottom, rgba(5, 8, 12, 0.5) 0%, transparent 18%, transparent 80%, rgba(5, 8, 12, 0.7) 100%);
+  background: radial-gradient(circle at center, transparent 40%, rgba(7, 12, 10, 0.65) 100%);
+  z-index: 4;
 }
 
 /* ==========================================================================
-   Spatial Reticle & Scanning Frame
+   Conversational Plant Speech Bubble (Planto Inspired)
+   ========================================================================== */
+.plant-speech-bubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 20;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1), top 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.plant-speech-bubble.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -80%) scale(0.92);
+}
+
+.bubble-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 23, 18, 0.88);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 8px 18px 8px 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.bubble-avatar {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.bubble-text {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.bubble-beak {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 7px;
+  background: rgba(14, 23, 18, 0.88);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.plant-speech-bubble.pulse-bounce {
+  animation: bubbleBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bubbleBounce {
+  0% { transform: translate(-50%, -100%) scale(0.92); }
+  50% { transform: translate(-50%, -106%) scale(1.04); }
+  100% { transform: translate(-50%, -100%) scale(1); }
+}
+
+/* ==========================================================================
+   Spatial Viewfinder Reticle (Minimal Image 4 Inspired)
    ========================================================================== */
 #spatial-scan-frame {
   position: absolute;
-  z-index: 4;
   pointer-events: none;
-  transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              top 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.3s ease,
-              box-shadow 0.3s ease;
   border-radius: 20px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
 }
 
 #spatial-scan-frame.idle {
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  box-shadow: none;
+  top: 50%;
+  left: 50%;
+  width: min(72vw, 310px);
+  height: min(48vh, 360px);
+  transform: translate(-50%, -50%);
+  opacity: 0.85;
 }
 
 #spatial-scan-frame.locked {
-  border: 1.5px solid rgba(134, 239, 172, 0.45);
-  box-shadow: 0 0 28px -4px rgba(134, 239, 172, 0.35);
+  opacity: 1;
 }
 
 .scan-corner {
   position: absolute;
-  width: 18px;
-  height: 18px;
-  border-color: rgba(255, 255, 255, 0.35);
-  border-style: solid;
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid rgba(255, 255, 255, 0.7);
   transition: border-color 0.3s ease;
 }
 
 #spatial-scan-frame.locked .scan-corner {
-  border-color: var(--pastel-mint);
+  border-color: var(--mint-primary);
+  box-shadow: 0 0 10px var(--mint-glow);
 }
 
-.scan-corner.tl { top: -2px; left: -2px; border-width: 2.5px 0 0 2.5px; border-top-left-radius: 14px; }
-.scan-corner.tr { top: -2px; right: -2px; border-width: 2.5px 2.5px 0 0; border-top-right-radius: 14px; }
-.scan-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 2.5px 2.5px; border-bottom-left-radius: 14px; }
-.scan-corner.br { bottom: -2px; right: -2px; border-width: 0 2.5px 2.5px 0; border-bottom-right-radius: 14px; }
+.scan-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-top-left-radius: 14px; }
+.scan-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-top-right-radius: 14px; }
+.scan-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-bottom-left-radius: 14px; }
+.scan-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-bottom-right-radius: 14px; }
 
-/* Animated Vertical Laser Sweep */
-.scan-laser-line {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--pastel-mint), transparent);
-  box-shadow: 0 0 8px var(--pastel-mint);
-  animation: laserSweep 3.2s ease-in-out infinite alternate;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-#spatial-scan-frame.locked .scan-laser-line {
-  opacity: 0.85;
-}
-
-@keyframes laserSweep {
-  0% { top: 4%; opacity: 0.3; }
-  50% { opacity: 0.85; }
-  100% { top: 96%; opacity: 0.3; }
-}
-
-/* Center Crosshair */
-.scan-crosshair {
+.scan-center-cross {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 8px;
-  height: 8px;
+  width: 14px;
+  height: 14px;
   transform: translate(-50%, -50%);
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+  opacity: 0.4;
 }
 
-.scan-badge {
+.scan-center-cross::before, .scan-center-cross::after {
+  content: '';
   position: absolute;
-  top: -12px;
+  background: #ffffff;
+}
+
+.scan-center-cross::before {
+  top: 6px;
+  left: 0;
+  width: 14px;
+  height: 2px;
+}
+
+.scan-center-cross::after {
+  top: 0;
+  left: 6px;
+  width: 2px;
+  height: 14px;
+}
+
+.scan-hint-tag {
+  position: absolute;
+  bottom: -32px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(18, 24, 34, 0.85);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(134, 239, 172, 0.4);
-  color: var(--pastel-mint);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 3px 9px;
-  border-radius: 10px;
-  opacity: 0;
-  transition: opacity 0.25s ease;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  padding: 4px 14px;
+  border-radius: 999px;
   white-space: nowrap;
-}
-
-#spatial-scan-frame.locked .scan-badge {
-  opacity: 1;
+  letter-spacing: -0.01em;
 }
 
 /* ==========================================================================
-   Interactive Spatial Leaf Pins
+   UI Root & Navigation Chrome
+   ========================================================================== */
+#spatial-ui-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: env(safe-area-inset-top, 16px) 18px env(safe-area-inset-bottom, 16px) 18px;
+  pointer-events: none;
+  z-index: 25;
+}
+
+#spatial-ui-root > * {
+  pointer-events: auto;
+}
+
+/* Top Bar */
+.app-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 6px;
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(134, 239, 172, 0.16);
+  border: 1px solid rgba(134, 239, 172, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(16px);
+}
+
+.brand-icon {
+  font-size: 19px;
+}
+
+.brand-title {
+  font-family: var(--font-brand);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-pill-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 19, 0.75);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-radius: 999px;
+  padding: 6px 13px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mint-primary);
+  box-shadow: 0 0 8px var(--mint-primary);
+}
+
+.status-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mint-primary);
+  letter-spacing: -0.01em;
+}
+
+.icon-circle-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(15, 23, 19, 0.75);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.icon-circle-btn:active {
+  transform: scale(0.92);
+}
+
+.btn-sparkle {
+  font-size: 15px;
+}
+
+/* ==========================================================================
+   Planto Minimal Floating Condition Card (Image 1 Inspired)
+   ========================================================================== */
+.condition-card-anchor {
+  position: absolute;
+  bottom: 96px;
+  left: 18px;
+  max-width: 320px;
+  width: calc(100% - 36px);
+  z-index: 15;
+}
+
+.planto-condition-card {
+  background: var(--glass-card-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-radius: 24px;
+  padding: 16px 18px;
+  box-shadow: var(--glass-card-shadow);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.planto-condition-card:hover {
+  transform: translateY(-2px);
+}
+
+.card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.condition-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-heading {
+  font-family: var(--font-brand);
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.card-subheading {
+  font-size: 11.5px;
+  color: var(--mint-primary);
+  font-weight: 500;
+}
+
+.btn-card-chevron {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 4px 12px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-card-chevron:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* 4 Metric Tiles Grid */
+.condition-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.metric-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 8px 12px;
+}
+
+.metric-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.water-bg { background: rgba(186, 230, 253, 0.15); }
+.light-bg { background: rgba(254, 240, 138, 0.15); }
+.vigor-bg { background: rgba(134, 239, 172, 0.15); }
+.temp-bg { background: rgba(252, 165, 165, 0.15); }
+
+.metric-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   Mode Segmented Pill Switcher
+   ========================================================================== */
+.view-mode-bar {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+.mode-pill-selector {
+  display: flex;
+  align-items: center;
+  background: rgba(14, 22, 18, 0.72);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.mode-pill-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.02em;
+}
+
+.mode-pill-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* ==========================================================================
+   Bottom Bar Controls (Image 4 Inspired Shutter & Drawer)
+   ========================================================================== */
+.app-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-bottom: 8px;
+}
+
+/* Specimen Drawer Trigger */
+.specimens-trigger-wrapper {
+  position: relative;
+}
+
+.specimens-toggle-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 19, 0.76);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.specimens-toggle-pill:active {
+  transform: scale(0.95);
+}
+
+.specimen-arrow {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Specimen Floating Drawer */
+.specimens-drawer {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  background: rgba(15, 23, 19, 0.92);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-radius: 20px;
+  padding: 8px;
+  min-width: 250px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 50;
+}
+
+.specimens-drawer.collapsed {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.95);
+}
+
+.specimen-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+  width: 100%;
+}
+
+.specimen-chip:hover, .specimen-chip.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.specimen-chip.active .chip-dot {
+  box-shadow: 0 0 8px currentColor;
+}
+
+.chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.deck-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 6px;
+}
+
+/* Center Glowing Shutter Button (Image 4 inspired) */
+.shutter-scanner-btn {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.shutter-scanner-btn:active {
+  transform: scale(0.91);
+}
+
+.shutter-glow-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(134, 239, 172, 0.6);
+  box-shadow: 0 0 16px rgba(134, 239, 172, 0.5);
+  animation: pulseRing 2.4s infinite ease-in-out;
+}
+
+@keyframes pulseRing {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.08); opacity: 0.95; }
+}
+
+.shutter-inner-core {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #051a0d;
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.55), inset 0 2px 2px rgba(255, 255, 255, 0.4);
+}
+
+.shutter-icon {
+  width: 26px;
+  height: 26px;
+}
+
+/* AI Doc Pill Button */
+.ai-doc-pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 19, 0.76);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.ai-doc-pill-btn:active {
+  transform: scale(0.95);
+}
+
+.ai-pill-sparkle {
+  color: var(--mint-primary);
+}
+
+/* ==========================================================================
+   Modals: Prescription Sheet & AI Doc Consultation
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 500px;
+  background: rgba(15, 24, 19, 0.95);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  padding: 20px 22px 32px 22px;
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.7);
+  max-height: 85vh;
+  overflow-y: auto;
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-overlay.hidden .modal-card {
+  transform: translateY(100%);
+}
+
+.modal-drag-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  margin: 0 auto 16px auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.doc-badge-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Prescription Details */
+.prescription-status-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.rx-score-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 3px solid var(--mint-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-brand);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--mint-primary);
+  flex-shrink: 0;
+}
+
+.rx-plant-name {
+  font-family: var(--font-brand);
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.rx-diagnosis-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.rx-section {
+  margin-bottom: 18px;
+}
+
+.rx-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10px;
+}
+
+.rx-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.rx-care-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rx-care-item {
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.rx-care-icon {
+  font-size: 20px;
+}
+
+.rx-care-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.rx-care-desc {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   AI Doctor Chat Conversation
+   ========================================================================== */
+.gemma-chip {
+  font-size: 10px;
+  background: rgba(134, 239, 172, 0.18);
+  color: var(--mint-primary);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 4px;
+}
+
+.chat-conversation-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 38vh;
+  overflow-y: auto;
+  margin-bottom: 14px;
+  padding-right: 4px;
+}
+
+.chat-bubble {
+  display: flex;
+  gap: 10px;
+  max-width: 92%;
+}
+
+.chat-bubble.user-msg {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.doc-avatar {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bubble-body {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #f1f5f9;
+}
+
+.user-msg .bubble-body {
+  background: var(--mint-primary);
+  color: #051c0d;
+  font-weight: 500;
+  border: none;
+}
+
+.chat-quick-prompts {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  scrollbar-width: none;
+}
+
+.chat-quick-prompts::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-chip {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quick-chip:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 4px 6px 4px 16px;
+}
+
+.chat-input-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-family: var(--font-ui);
+}
+
+.chat-input-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chat-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--mint-primary);
+  border: none;
+  color: #051c0d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.chat-send-btn:active {
+  transform: scale(0.92);
+}
+
+/* Typing Dots Animation */
+.typing-dots span {
+  animation: blink 1.2s infinite;
+  font-size: 20px;
+  line-height: 10px;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+/* ==========================================================================
+   Spatial Leaf Pins
    ========================================================================== */
 #spatial-pins-layer {
   position: absolute;
   inset: 0;
-  z-index: 5;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.35s ease;
-}
-
-#spatial-pins-layer.visible {
-  opacity: 1;
-  pointer-events: auto;
+  z-index: 12;
 }
 
 .spatial-leaf-pin {
   position: absolute;
   transform: translate(-50%, -50%);
-  cursor: pointer;
   pointer-events: auto;
-  display: flex;
-  align-items: center;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.spatial-leaf-pin:hover,
-.spatial-leaf-pin.active {
-  transform: translate(-50%, -50%) scale(1.08);
-  z-index: 10;
-}
-
-.pin-target {
-  position: relative;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pin-core {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--pin-color, var(--pastel-mint));
-  box-shadow: 0 0 10px var(--pin-color, var(--pastel-mint));
-  border: 1.5px solid #ffffff;
-}
-
-.pin-pulse {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1.5px solid var(--pin-color, var(--pastel-mint));
-  animation: pinPulseRing 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
-@keyframes pinPulseRing {
-  0% { transform: scale(0.6); opacity: 0.9; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-
-.pin-leader-line {
-  width: 24px;
-  height: 1px;
-  background: linear-gradient(90deg, var(--pin-color, var(--pastel-mint)), rgba(255, 255, 255, 0.3));
-}
-
-.pin-card-glass {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular), 0 8px 24px rgba(0,0,0,0.5);
-  border-radius: 12px;
-  padding: 6px 10px;
-  min-width: 80px;
-}
-
-.pin-header {
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
+  background: rgba(14, 23, 18, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 4px 10px 4px 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.spatial-leaf-pin:hover {
+  transform: translate(-50%, -50%) scale(1.08);
 }
 
 .pin-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.pin-score {
-  font-weight: 700;
-  font-size: 0.82rem;
-  color: #ffffff;
-}
-
-.pin-caption {
-  font-size: 0.62rem;
-  color: rgba(255, 255, 255, 0.65);
-  letter-spacing: 0.04em;
-  margin-top: 1px;
-}
-
-.pin-note {
-  font-size: 0.55rem;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
-  margin-top: 1px;
-}
-
-.loupe-pin .loupe-target {
-  width: 28px;
-  height: 28px;
-}
-
-.loupe-pin .loupe-target .pin-core {
-  width: 13px;
-  height: 13px;
-  background: radial-gradient(circle, #ffffff 25%, var(--pastel-mint) 100%);
-  box-shadow: 0 0 14px var(--pastel-mint), 0 0 22px rgba(134, 239, 172, 0.6);
-}
-
-.loupe-pin .loupe-target .pin-pulse {
-  border: 2px solid var(--pastel-mint);
-  animation: pinPulseRing 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
-.loupe-card {
-  border-color: rgba(134, 239, 172, 0.45) !important;
-  box-shadow: 0 0 16px rgba(134, 239, 172, 0.25), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-}
-
-/* ==========================================================================
-   VisionOS Spatial Chrome (Header & HUD Container)
-   ========================================================================== */
-#spatial-ui-root {
-  position: relative;
-  z-index: 10;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: env(safe-area-inset-top, 20px) 18px env(safe-area-inset-bottom, 24px) 18px;
-  pointer-events: none;
-}
-
-/* Top Bar: Single Sleek Status Capsule */
-.spatial-top-bar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  pointer-events: auto;
-}
-
-.status-capsule {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular), 0 8px 24px rgba(0, 0, 0, 0.4);
-  border-radius: 24px;
-  padding: 8px 18px;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.status-pulse-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  transition: all 0.3s ease;
 }
 
-.status-capsule.idle {
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-.status-capsule.idle .status-pulse-dot {
-  background: rgba(255, 255, 255, 0.45);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-  animation: pulseIdle 2.2s infinite ease-in-out;
-}
-
-.status-capsule.detected {
-  border-color: rgba(134, 239, 172, 0.45);
-  box-shadow: var(--glass-specular), 0 0 20px -2px rgba(134, 239, 172, 0.35);
-}
-
-.status-capsule.detected .status-pulse-dot {
-  background: var(--pastel-mint);
-  box-shadow: 0 0 10px var(--pastel-mint);
-  animation: pulseGreen 1.8s infinite ease-in-out;
-}
-
-.status-text-content {
-  font-size: 0.74rem;
+.pin-text {
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
   color: #ffffff;
 }
 
-@keyframes pulseIdle {
-  0%, 100% { opacity: 0.4; transform: scale(0.9); }
-  50% { opacity: 0.9; transform: scale(1.1); }
-}
-
-@keyframes pulseGreen {
-  0%, 100% { transform: scale(0.9); opacity: 0.85; }
-  50% { transform: scale(1.25); opacity: 1; }
-}
-
-/* ==========================================================================
-   VisionOS Diagnostic Telemetry Cluster (Mode Pills + Floating Card)
-   ========================================================================== */
-/* ==========================================================================
-   VisionOS Diagnostic Telemetry Cluster (Mode Pills + Floating Card)
-   ========================================================================== */
-#spatial-card-cluster {
-  position: absolute;
-  bottom: 54px;
-  left: 0;
-  right: 0;
-  margin: 0 auto;
-  width: calc(100% - 24px);
-  max-width: 360px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  z-index: 10;
-  pointer-events: none;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-#spatial-card-cluster.cluster-hidden {
-  opacity: 0;
-  transform: translateY(40px) scale(0.95);
-  pointer-events: none;
-}
-
-#spatial-card-cluster.cluster-visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-#spatial-card-cluster.is-minimized #mode-segmented-control {
-  display: none;
-}
-
-/* VisionOS Segmented Control (Mode Pills) */
-.visionos-segmented-control {
-  display: flex;
-  align-items: center;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular);
-  border-radius: 20px;
-  padding: 3px 4px;
-  gap: 2px;
-}
-
-.seg-pill-btn {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.65);
-  border-radius: 16px;
-  padding: 4px 10px;
-  font-family: inherit;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.seg-pill-btn.active {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-}
-
-.seg-pill-btn:active {
-  transform: scale(0.96);
-}
-
-/* VisionOS 3D Floating Diagnostic Card Anchor */
-#spatial-card-anchor {
-  width: 100%;
-  pointer-events: auto;
-  perspective: 1200px;
-}
-
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular), var(--glass-shadow);
-  border-radius: 20px;
-  padding: 12px 14px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.3s ease;
-}
-
-.compact-hud {
-  padding: 10px 14px;
-  border-radius: 18px;
-}
-
-.compact-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.light-meter-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(254, 240, 138, 0.09);
-  border: 1px solid rgba(254, 240, 138, 0.2);
-  border-radius: 9px;
-  padding: 3px 8px;
-  margin-bottom: 7px;
-  font-size: 0.6rem;
-}
-
-.light-chip-icon {
-  font-size: 0.72rem;
-}
-
-.light-chip-label {
-  color: rgba(255, 255, 255, 0.65);
-  font-weight: 500;
-}
-
-.light-chip-val {
-  color: var(--pastel-primrose);
+.pin-score {
+  font-size: 11px;
   font-weight: 700;
-}
-
-.compact-body {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* Left: Score & Mini Rings */
-.compact-rings-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 62px;
-  flex-shrink: 0;
-}
-
-.mini-rings-wrapper {
-  width: 52px;
-  height: 52px;
-  position: relative;
-}
-
-.mini-rings-wrapper .concentric-rings {
-  transform: rotate(-90deg);
-}
-
-.compact-score-num {
-  font-size: 1.12rem;
-  font-weight: 800;
-  line-height: 1;
-  margin-top: 3px;
-}
-
-.compact-score-label {
-  font-size: 0.52rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-/* Right: 4 Micro Stat Chips */
-.compact-stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-  flex-grow: 1;
-}
-
-.compact-stat-chip {
-  background: var(--glass-bg-subtle);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 9px;
-  padding: 4px 7px;
-}
-
-.chip-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3px;
-}
-
-.chip-label {
-  font-size: 0.58rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.chip-val {
-  font-size: 0.62rem;
-  font-weight: 700;
-}
-
-.chip-bar {
-  width: 100%;
-  height: 2.5px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-}
-
-.chip-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.6s ease;
-}
-
-/* Care Tips Grid in Compact HUD */
-.care-tips-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: 2px;
-}
-
-.care-tip-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  background: var(--glass-bg-subtle);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 9px;
-  padding: 5px 8px;
-}
-
-.tip-icon {
-  font-size: 0.85rem;
-  line-height: 1.2;
-}
-
-.tip-text {
-  font-size: 0.62rem;
-  line-height: 1.35;
-}
-
-.tip-title {
-  font-weight: 700;
-  color: #ffffff;
-  margin-right: 3px;
-}
-
-.tip-desc {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* Minimized Card HUD */
-.minimized-pill-card {
-  padding: 8px 14px !important;
-  border-radius: 20px !important;
-  margin: 0 auto;
-}
-
-.minimized-inner-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 12px;
-}
-
-.min-name {
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.min-score {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-}
-
-.card-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-minimize-card,
-.btn-expand-card {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  font-size: 0.68rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.btn-minimize-card:hover,
-.btn-expand-card:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
-
-/* Card Header */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.status-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  padding: 3px 9px;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--status-color, var(--pastel-mint));
-  box-shadow: 0 0 8px var(--status-color, var(--pastel-mint));
-}
-
-.status-text {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--status-color, var(--pastel-mint));
-}
-
-.specimen-badge {
-  font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.7);
-  font-style: italic;
-}
-
-.ring-bg {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.08);
-}
-
-.ring-bar {
-  fill: none;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.vitality-score-block {
-  display: flex;
-  flex-direction: column;
-}
-
-.vigor-num {
-  font-size: 2.8rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
-.vigor-label {
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 4px;
-}
-
-/* 4 Semantic Telemetry Tiles */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.metric-tile {
-  background: var(--glass-bg-subtle);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.tile-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tile-icon {
-  font-size: 0.9rem;
-}
-
-.tile-val {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.tile-bar-bg {
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-}
-
-.tile-bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.tile-name {
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.card-footer-tip {
-  text-align: center;
-  font-size: 0.62rem;
-  color: rgba(255, 255, 255, 0.45);
-  letter-spacing: 0.04em;
-  margin-top: 2px;
-}
-
-/* ==========================================================================
-   Spectral NDVI Mode HUD
-   ========================================================================== */
-.spectral-legend-card {
-  margin: 12px 0 16px 0;
-}
-
-.spectral-gradient-bar {
-  width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #1e293b 0%, #fed7aa 50%, #86efac 100%);
-  margin-bottom: 6px;
-}
-
-.spectral-legend-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.62rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.spectral-stat-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.spectral-stat {
-  background: var(--glass-bg-subtle);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 10px 8px;
-  text-align: center;
-}
-
-.stat-big-num {
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-
-.stat-sub {
-  font-size: 0.55rem;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 3px;
-}
-
-/* ==========================================================================
-   Cellular Tissue Mode HUD
-   ========================================================================== */
-.tissue-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.tissue-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: var(--glass-bg-subtle);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-}
-
-.tissue-lbl {
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.tissue-val {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-/* ==========================================================================
-   Specimen Deck & Collapsible Bottom Drawer
-   ========================================================================== */
-.spatial-bottom-bar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  pointer-events: auto;
-  position: relative;
-  z-index: 20;
-}
-
-.specimens-trigger-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.specimens-toggle-pill {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular), 0 4px 16px rgba(0, 0, 0, 0.4);
-  border-radius: 20px;
-  padding: 6px 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgba(255, 255, 255, 0.75);
-  font-family: inherit;
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.specimens-toggle-pill:hover,
-.specimens-toggle-pill:active {
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-}
-
-.specimen-icon {
-  font-size: 0.85rem;
-}
-
-.specimen-arrow {
-  font-size: 0.65rem;
-  opacity: 0.7;
-}
-
-.specimens-drawer {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  z-index: 25;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.specimens-drawer.collapsed {
-  display: none !important;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.specimen-deck-bar {
-  display: flex;
-  align-items: center;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular), 0 12px 32px rgba(0, 0, 0, 0.6);
-  border-radius: 24px;
-  padding: 5px 8px;
-  gap: 6px;
-  overflow-x: auto;
-  max-width: 94vw;
-}
-
-.deck-divider {
-  width: 1px;
-  height: 18px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 0 2px;
-}
-
-.specimen-chip {
-  background: transparent;
-  border: none;
-  border-radius: 16px;
-  padding: 6px 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: inherit;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.chip-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-
-.specimen-chip.active {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.specimen-chip:active {
-  transform: scale(0.96);
-}
-
-/* ==========================================================================
-   Desktop Responsive Layout
-   ========================================================================== */
-@media (min-width: 768px) {
-  #spatial-ui-root {
-    padding: 24px 32px;
-  }
-
-  #spatial-card-cluster {
-    max-width: 420px;
-    bottom: 72px;
-  }
-
-  .vitality-hero {
-    gap: 24px;
-  }
 }

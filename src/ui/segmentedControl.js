@@ -1,17 +1,17 @@
 /**
- * SegmentedControl (VisionOS Floating Mode Pill)
- * High-precision Apple VisionOS sliding pill switcher for diagnostic modes.
+ * SegmentedControl (Minimalist View Mode Selector)
+ * Switch between Live Scanner, ASCII/Dot Matrix Tracing, and Doctor Prescription.
  */
 export class SegmentedControl {
   constructor(containerEl, onModeChange) {
     this.container = containerEl;
     this.onModeChange = onModeChange;
     this.modes = [
-      { id: 'vigor', label: 'Overview', icon: '✦' },
-      { id: 'spectral', label: 'Leaf Scan', icon: '🔍' },
-      { id: 'tissue', label: 'Care Tips', icon: '💡' }
+      { id: 'scan', label: 'Camera', icon: '📷' },
+      { id: 'tracer', label: 'Tracing', icon: '✨' },
+      { id: 'rx', label: 'Prescription', icon: '🩺' }
     ];
-    this.activeMode = 'vigor';
+    this.activeMode = 'tracer'; // Default to show off the gorgeous tracing!
 
     this.render();
   }
@@ -26,22 +26,22 @@ export class SegmentedControl {
 
   render() {
     this.container.innerHTML = `
-      <nav class="visionos-segmented-control" role="tablist">
+      <div class="mode-pill-selector" role="tablist">
         ${this.modes.map(m => `
           <button 
             type="button" 
             role="tab" 
             aria-selected="${this.activeMode === m.id}"
-            class="seg-pill-btn ${this.activeMode === m.id ? 'active' : ''}" 
+            class="mode-pill-btn ${this.activeMode === m.id ? 'active' : ''}" 
             data-mode="${m.id}">
-            <span class="seg-icon">${m.icon}</span>
-            <span class="seg-label">${m.label}</span>
+            <span class="pill-icon">${m.icon}</span>
+            <span class="pill-label">${m.label}</span>
           </button>
         `).join('')}
-      </nav>
+      </div>
     `;
 
-    this.container.querySelectorAll('.seg-pill-btn').forEach(btn => {
+    this.container.querySelectorAll('.mode-pill-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const mode = btn.dataset.mode;

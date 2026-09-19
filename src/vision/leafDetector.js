@@ -19,6 +19,9 @@ export class LeafDetector {
 
     // Rolling photometric lux light meter
     this.smoothLux = 420;
+
+    // Foliage binary/intensity mask for real-time ASCII/dot-matrix leaf tracing
+    this.leafMask = new Uint8Array(this.offscreenCanvas.width * this.offscreenCanvas.height);
   }
 
   analyze(sourceCanvas) {
@@ -33,6 +36,8 @@ export class LeafDetector {
     this.offCtx.drawImage(sourceCanvas, 0, 0, sw, sh);
     const frameData = this.offCtx.getImageData(0, 0, sw, sh);
     const data = frameData.data;
+
+    this.leafMask.fill(0);
 
     let greenPixelCount = 0;
     let minX = sw, maxX = 0, minY = sh, maxY = 0;
@@ -108,8 +113,9 @@ export class LeafDetector {
                         (g >= r * 1.04);
 
       if (isFoliage) {
-        const px = (i / 4) % sw;
-        const py = Math.floor((i / 4) / sw);
+        const pixIdx = (i / 4);
+        const px = pixIdx % sw;
+        const py = Math.floor(pixIdx / sw);
 
         greenPixelCount++;
         sumX += px;
@@ -124,19 +130,24 @@ export class LeafDetector {
         const chloroVal = Math.min(100, Math.max(0, (Math.max(egi, delta) / 120) * 100));
         sumChlorophyll += chloroVal;
 
-        // Multi-Spectral Pathology & Variegation Check:
+        let maskVal = 1;
         // - Chlorosis (yellowing/water stress): Hue 46°-60° with high green/red
         if (hue >= 46 && hue <= 60 && g > 75) {
           chlorosisPixels++;
+          maskVal = 2;
         }
         // - Variegation (golden marbling in Money Plants): Hue 62°-78° with high saturation
-        if (hue >= 62 && hue <= 78 && sat >= 0.35) {
+        else if (hue >= 62 && hue <= 78 && sat >= 0.35) {
           variegationPixels++;
+          maskVal = 4;
         }
+        this.leafMask[pixIdx] = maskVal;
       } else {
+        const pixIdx = (i / 4);
         // - Necrosis check on non-green boundary pixels: brown crispy edges
         if (hue >= 20 && hue <= 44 && sat >= 0.28 && luma < 120 && luma > 30) {
           necrosisPixels++;
+          this.leafMask[pixIdx] = 3;
         }
       }
     }
@@ -294,7 +305,10 @@ export class LeafDetector {
           variegation: variegationRate,
           healthScore: computedHealth
         },
-        dynamicPins
+        dynamicPins,
+        mask: this.leafMask,
+        maskWidth: sw,
+        maskHeight: sh
       };
     } else {
       return {
@@ -307,7 +321,10 @@ export class LeafDetector {
         isSharp: isSharpFocus,
         distanceTip: 'Looking for leaves...',
         pathology: { chlorosis: 0, necrosis: 0, variegation: 0, healthScore: 0 },
-        dynamicPins: []
+        dynamicPins: [],
+        mask: this.leafMask,
+        maskWidth: sw,
+        maskHeight: sh
       };
     }
   }

@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#05080c">
+  <meta name="theme-color" content="#070c0a">
 
-  <title>Plant Vision AR</title>
-  <meta name="description" content="Spatial Plant Health & Telemetry Bio-Diagnostic WebAR">
+  <title>Money Plant Doc — AI Botanical Health & Care</title>
+  <meta name="description" content="Minimalist spatial leaf health scanner & doctor for Money Plants, featuring real-time ASCII/dot-matrix contour tracing and neural bio-diagnosis.">
+
+  <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/src/index.css">
 </head>
@@ -19,54 +24,221 @@
     <div id="media-layer">
       <video id="camera-video" playsinline muted autoplay></video>
       <canvas id="display-canvas"></canvas>
+      <!-- Real-time ASCII / Dot-Matrix Leaf Tracing & Pixel-Trail Canvas -->
+      <canvas id="tracer-canvas"></canvas>
       <canvas id="spectral-canvas"></canvas>
       <div class="viewport-ambient-vignette"></div>
     </div>
 
-    <!-- Spatial Bio-Scanning Reticle Frame -->
+    <!-- Conversational Plant Speech Bubble (Planto Style) -->
+    <div id="plant-speech-bubble" class="plant-speech-bubble hidden">
+      <div class="bubble-content">
+        <span class="bubble-avatar">🌱</span>
+        <span class="bubble-text">Looking for leaves...</span>
+      </div>
+      <div class="bubble-beak"></div>
+    </div>
+
+    <!-- Spatial Bio-Scanning Viewfinder Reticle -->
     <div id="spatial-scan-frame" class="idle">
       <div class="scan-corner tl"></div>
       <div class="scan-corner tr"></div>
       <div class="scan-corner bl"></div>
       <div class="scan-corner br"></div>
-      <div class="scan-laser-line"></div>
-      <div class="scan-crosshair"></div>
-      <div class="scan-badge">LEAF FOCUSED</div>
+      <div class="scan-laser-sweep"></div>
+      <div class="scan-center-cross"></div>
+      <div class="scan-hint-tag" id="reticle-hint">Place Money Plant in focus</div>
     </div>
 
     <!-- Interactive Spatial Leaf Pins Layer -->
     <div id="spatial-pins-layer"></div>
 
-    <!-- VisionOS Spatial Chrome UI -->
+    <!-- UI Overlay Root -->
     <div id="spatial-ui-root">
-      <!-- Top Bar: Single sleek scanning status capsule -->
-      <header class="spatial-top-bar">
-        <div id="spatial-status-pill" class="status-capsule idle">
-          <span class="status-pulse-dot"></span>
-          <span class="status-text-content">Point camera at your plant's leaves</span>
+      <!-- Top Bar: App Branding & Live Health Badge -->
+      <header class="app-top-bar">
+        <div class="brand-group">
+          <div class="brand-icon-wrap">
+            <span class="brand-icon">🌿</span>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-title">Money Plant Doc</h1>
+            <span class="brand-subtitle" id="active-specimen-label">Epipremnum aureum</span>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <div id="spatial-status-pill" class="status-pill-badge optimal">
+            <span class="status-dot"></span>
+            <span class="status-label">96% Healthy</span>
+          </div>
+          <button type="button" id="top-ai-btn" class="icon-circle-btn" aria-label="Open AI Plant Doctor">
+            <span class="btn-sparkle">✨</span>
+          </button>
         </div>
       </header>
 
-      <!-- Center / Bottom: Floating Diagnostic Telemetry Unit -->
-      <div id="spatial-card-cluster" class="cluster-hidden">
-        <!-- VisionOS Segmented Mode Switcher (VIGOR | SPECTRAL | TISSUE) -->
-        <div id="mode-segmented-control"></div>
+      <!-- Floating Minimal Condition Card (Planto Style) -->
+      <div id="condition-card-anchor" class="condition-card-anchor">
+        <div id="condition-card" class="planto-condition-card">
+          <div class="card-top-row">
+            <div class="condition-title-wrap">
+              <span class="card-heading">Plant Health</span>
+              <span class="card-subheading" id="card-status-sub">Optimal & Thriving</span>
+            </div>
+            <button type="button" id="expand-prescription-btn" class="btn-card-chevron" aria-label="View doctor diagnosis">
+              <span>Diagnosis ›</span>
+            </button>
+          </div>
 
-        <!-- VisionOS Floating 3D Telemetry Card Anchor -->
-        <div id="spatial-card-anchor"></div>
+          <div class="condition-metrics-grid">
+            <div class="metric-tile water-tile">
+              <div class="metric-icon-circle water-bg">💧</div>
+              <div class="metric-data">
+                <span class="metric-label">Water</span>
+                <span class="metric-value" id="val-water">85%</span>
+              </div>
+            </div>
+
+            <div class="metric-tile light-tile">
+              <div class="metric-icon-circle light-bg">☀️</div>
+              <div class="metric-data">
+                <span class="metric-label">Light</span>
+                <span class="metric-value" id="val-light">78%</span>
+              </div>
+            </div>
+
+            <div class="metric-tile vigor-tile">
+              <div class="metric-icon-circle vigor-bg">🌿</div>
+              <div class="metric-data">
+                <span class="metric-label">Vitality</span>
+                <span class="metric-value" id="val-vigor">93%</span>
+              </div>
+            </div>
+
+            <div class="metric-tile temp-tile">
+              <div class="metric-icon-circle temp-bg">🌡️</div>
+              <div class="metric-data">
+                <span class="metric-label">Room</span>
+                <span class="metric-value" id="val-temp">24°C</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Bottom Bar: Minimal Collapsible Specimen Drawer -->
-      <footer class="spatial-bottom-bar">
+      <!-- Mode Segmented Switcher (SCAN | TRACER | TISSUE) -->
+      <div class="view-mode-bar">
+        <div id="mode-segmented-control" class="mode-pill-selector"></div>
+      </div>
+
+      <!-- Bottom Bar: Presets + Glowing Shutter + AI Chat -->
+      <footer class="app-bottom-bar">
         <div class="specimens-trigger-wrapper">
-          <button id="specimens-toggle-btn" type="button" class="specimens-toggle-pill" aria-label="Toggle botanical specimens">
-            <span class="specimen-icon">🌿</span>
-            <span class="specimen-btn-label">Presets</span>
+          <button id="specimens-toggle-btn" type="button" class="specimens-toggle-pill" aria-label="Toggle plant specimens">
+            <span class="specimen-icon">🪴</span>
+            <span class="specimen-btn-label">Specimens</span>
             <span class="specimen-arrow">▾</span>
           </button>
           <div id="specimen-deck-container" class="specimens-drawer collapsed"></div>
         </div>
+
+        <button id="main-diagnose-btn" type="button" class="shutter-scanner-btn" aria-label="Run neural diagnosis">
+          <div class="shutter-glow-ring"></div>
+          <div class="shutter-inner-core">
+            <svg class="shutter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+          </div>
+        </button>
+
+        <button id="bottom-ai-chat-btn" type="button" class="ai-doc-pill-btn" aria-label="Ask Plant Doc AI">
+          <span class="ai-pill-sparkle">✨</span>
+          <span class="ai-pill-text">AI Doc</span>
+        </button>
       </footer>
+    </div>
+
+    <!-- Doctor's Full Diagnosis & Treatment Sheet -->
+    <div id="prescription-modal" class="modal-overlay hidden">
+      <div class="modal-card glass-modal">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+          <div class="doc-badge-pill">
+            <span class="doc-icon">🩺</span>
+            <span class="doc-badge-text">Clinical Leaf Prescription</span>
+          </div>
+          <button type="button" id="close-prescription-btn" class="modal-close-btn" aria-label="Close modal">✕</button>
+        </div>
+
+        <div class="prescription-body">
+          <div class="prescription-status-hero" id="rx-hero">
+            <div class="rx-score-circle" id="rx-score">96%</div>
+            <div class="rx-hero-meta">
+              <h2 class="rx-plant-name" id="rx-name">Money Plant (Epipremnum aureum)</h2>
+              <span class="rx-diagnosis-label" id="rx-status-tag">Optimal Cellular Vigor</span>
+            </div>
+          </div>
+
+          <div class="rx-section">
+            <h3 class="rx-section-title">🔍 Clinical Observations</h3>
+            <p class="rx-desc" id="rx-description">
+              Turgid glossy leaf tissue with vibrant chlorophyll pigmentation. No signs of bacterial vascular wilt or acidic manganese toxicity.
+            </p>
+          </div>
+
+          <div class="rx-section">
+            <h3 class="rx-section-title">💊 Doctor's Care Plan</h3>
+            <div class="rx-care-list" id="rx-care-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Plant Doctor Interactive Consultation Modal (Gemma-Powered) -->
+    <div id="ai-doc-modal" class="modal-overlay hidden">
+      <div class="modal-card glass-modal ai-chat-modal">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+          <div class="doc-badge-pill ai-doc-pill">
+            <span class="doc-icon">🌿</span>
+            <span class="doc-badge-text">Money Plant Doc AI</span>
+            <span class="gemma-chip">Powered by Gemma</span>
+          </div>
+          <button type="button" id="close-ai-doc-btn" class="modal-close-btn" aria-label="Close chat">✕</button>
+        </div>
+
+        <div class="chat-conversation-scroll" id="ai-chat-messages">
+          <div class="chat-bubble doc-msg">
+            <div class="doc-avatar">🩺</div>
+            <div class="bubble-body">
+              <p>Hello! I am your <strong>Money Plant Doc</strong>. I've analyzed your specimen's foliage, chlorophyll absorption, and tissue status. What would you like to know about your plant's care or symptoms?</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Question Prompts -->
+        <div class="chat-quick-prompts" id="ai-quick-prompts">
+          <button type="button" class="quick-chip" data-query="How do I treat Bacterial Wilt?">🦠 Bacterial Wilt cure</button>
+          <button type="button" class="quick-chip" data-query="Why are my leaves yellowing?">🍂 Yellow leaves cause</button>
+          <button type="button" class="quick-chip" data-query="How often should I water my Money Plant?">💧 Watering schedule</button>
+          <button type="button" class="quick-chip" data-query="What soil pH does Money Plant need?">🧪 Ideal soil pH</button>
+        </div>
+
+        <!-- Input Box -->
+        <form id="ai-chat-form" class="chat-input-bar">
+          <input type="text" id="ai-user-input" placeholder="Ask Plant Doc anything about your plant..." autocomplete="off">
+          <button type="submit" id="ai-send-btn" class="chat-send-btn" aria-label="Send message">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </form>
+      </div>
     </div>
   </main>
 
