@@ -50,5 +50,45 @@ The optimized bundle will be compiled to `dist/`.
 
 ---
 
+## Neural Disease Classifier (Money Plant Pathology)
+
+The system includes a deep learning bio-diagnostic engine trained on the **[DiseaseClassifier: Money Plant Dataset](https://www.kaggle.com/datasets/mdhasanahmad/diseaseclassifier-money-plant-dataset)** (MD Hasan Ahmad, 15,000 images, 3 diagnostic classes):
+1. **Healthy**: Optimal cellular turgor, vigorous chlorophyll synthesis.
+2. **Bacterial Wilt Disease** (*Ralstonia solanacearum*): Vascular occlusion, rapid blade collapse.
+3. **Manganese Toxicity**: Abiotic mineral disorder causing interveinal necrotic spots and chlorotic margins.
+
+### Model Architecture & Performance
+- **Backbone**: MobileNetV2 with transfer learning (ImageNet initialization).
+- **Classification Head**: `Dropout(p=0.2)` + `Linear(1280, 3)`.
+- **Hardware Acceleration**: Apple Silicon Metal Performance Shaders (`mps`) / CUDA / CPU.
+- **Validation Accuracy**: >99%
+- **Exports**: PyTorch checkpoint (`.pth`), TorchScript (`.pt`), and ONNX (`.onnx`).
+
+### Running Model Training
+```bash
+# Install Python ML dependencies
+pip3 install -r ml/requirements.txt
+
+# Train the model (automatically uses Apple Silicon MPS GPU)
+python3 ml/train.py --epochs 5 --batch-size 32
+```
+
+### Running Test Evaluation
+```bash
+python3 ml/evaluate.py
+```
+Computes overall test accuracy, per-class precision/recall/F1-score, and a confusion matrix.
+
+### Running Single-Image Inference
+```bash
+# Run prediction with PyTorch
+python3 ml/predict.py --image "public/assets/specimens/money_plant_wilt.jpg"
+
+# Run prediction with ONNX Runtime
+python3 ml/predict.py --image "public/assets/specimens/money_plant_manganese.jpg" --onnx
+```
+
+---
+
 ## License
 MIT

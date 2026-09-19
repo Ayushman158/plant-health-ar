@@ -1,0 +1,47 @@
+{
+  "model_name": "mobilenet_v2",
+  "classes": [
+    "Bacterial wilt disease",
+    "Healthy",
+    "Manganese Toxicity"
+  ],
+  "idx_to_class": {
+    "0": "Bacterial wilt disease",
+    "1": "Healthy",
+    "2": "Manganese Toxicity"
+  },
+  "class_to_idx": {
+    "Bacterial wilt disease": 0,
+    "Healthy": 1,
+    "Manganese Toxicity": 2
+  },
+  "diagnostics": {
+    "Bacterial wilt disease": {
+      "disease_id": "bacterial_wilt",
+      "common_name": "Bacterial Wilt",
+      "pathogen": "Ralstonia solanacearum / Erwinia spp.",
+      "severity": "High Alert",
+      "status": "alert",
+      "symptoms": "Rapid vascular wilting, yellowing leaf blades, limp petiole collapse without preliminary drying.",
+      "care_actions": "Quarantine specimen immediately. Discard severely affected foliage. Sterilize pruning tools. Avoid overhead watering."
+    },
+    "Healthy": {
+      "disease_id": "healthy",
+      "common_name": "Healthy & Optimal",
+      "pathogen": "None",
+      "severity": "Optimal",
+      "status": "optimal",
+      "symptoms": "Turgid glossy leaf tissue, vibrant chlorophyll pigmentation, active photosynthesis.",
+      "care_actions": "Maintain moderate indirect sunlight and weekly watering when topsoil dries."
+    },
+    "Manganese Toxicity": {
+      "disease_id": "manganese_toxicity",
+      "common_name": "Manganese Toxicity",
+      "pathogen": "Abiotic Physiological Nutrient Stress",
+      "severity": "Tissue Warning",
+      "status": "warning",
+      "symptoms": "Interveinal dark-brown necrotic specks, chlorotic halo margins, leaf tip cupping caused by acidic soil (pH < 5.2).",
+      "care_actions": "Flush potting mix with filtered neutral water. Check soil pH and apply horticultural lime to raise pH to 6.0-6.5."
+    }
+  }
+}

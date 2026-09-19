@@ -44,6 +44,7 @@ class PlantVisionApp {
     this.pinManager = new PinManager(this.pinsContainer, (selectedPin) => {
       this.onLeafPinSelected(selectedPin);
     });
+    this.pinManager.setSourceCanvas(this.displayCanvas);
 
     this.segmentedControl = new SegmentedControl(this.segContainer, (mode) => {
       this.onModeChanged(mode);
@@ -159,12 +160,19 @@ class PlantVisionApp {
           const b = analysis.box;
           const p = PLANT_PROFILES[this.activePlantId] || PLANT_PROFILES.money_plant;
 
+          // Update Glass Cards live telemetry
+          this.glassCards.updateAnalysis(analysis);
+
+          const computedScore = analysis.pathology?.healthScore || p.vigor;
+          const statusDesc = (analysis.distanceTip && analysis.distanceTip !== 'Leaf Focused')
+            ? analysis.distanceTip
+            : p.statusLabel;
+
           // Transition to DETECTED state
           if (!this.isDetected) {
             this.isDetected = true;
             this.statusPillEl.classList.remove('idle');
             this.statusPillEl.classList.add('detected');
-            this.statusTextEl.textContent = `${p.name} Found • ${p.statusLabel} (${p.vigor}%)`;
 
             this.cardClusterEl.classList.remove('cluster-hidden');
             this.cardClusterEl.classList.add('cluster-visible');
@@ -174,6 +182,8 @@ class PlantVisionApp {
             this.scanFrameEl.classList.remove('idle');
             this.scanFrameEl.classList.add('locked');
           }
+
+          this.statusTextEl.textContent = `${p.name} Found • ${statusDesc} (${computedScore}%)`;
 
           // Smoothly track detected plant foliage box
           this.scanFrameEl.style.left = `${b.x * 100}%`;

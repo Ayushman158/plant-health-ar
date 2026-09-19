@@ -1,9 +1,14 @@
+const base = (import.meta.env.BASE_URL || '/').endsWith('/') 
+  ? (import.meta.env.BASE_URL || '/') 
+  : `${import.meta.env.BASE_URL}/`;
+const asset = (p) => `${base}${p.startsWith('/') ? p.slice(1) : p}`;
+
 export const PLANT_PROFILES = {
   money_plant: {
     id: 'money_plant',
     name: 'Money Plant',
     commonName: 'Devil\'s Ivy (Epipremnum)',
-    specimenImage: '/assets/specimens/pothos.jpg',
+    specimenImage: asset('assets/specimens/pothos.jpg'),
     status: 'optimal',
     statusLabel: 'Thriving & Healthy',
     vigor: 93,
@@ -32,11 +37,77 @@ export const PLANT_PROFILES = {
       { id: 'mp3', x: 65, y: 68, label: 'Healthy Vine', score: 89, color: '#bae6fd', note: 'Firm water-rich stem' }
     ]
   },
+  money_plant_wilt: {
+    id: 'money_plant_wilt',
+    name: 'Money Plant (Bacterial Wilt)',
+    commonName: 'Epipremnum aureum — Ralstonia Wilt',
+    specimenImage: asset('assets/specimens/money_plant_wilt.jpg'),
+    status: 'stress',
+    statusLabel: 'Pathogen Alert: Wilt',
+    vigor: 38,
+    colorScheme: {
+      primary: '#fca5a5',       // Soft Coral / Rose
+      secondary: '#f87171',
+      surface: 'rgba(252, 165, 165, 0.14)',
+      border: 'rgba(252, 165, 165, 0.35)',
+      glow: 'rgba(252, 165, 165, 0.4)'
+    },
+    metrics: {
+      chlorophyll: { value: 42, unit: '%', label: 'Leaf Vitality', detail: 'Rapid Chlorosis', color: '#fca5a5' },
+      hydration: { value: 28, unit: '%', label: 'Turgor Pressure', detail: 'Vascular Blockage', color: '#fca5a5' },
+      solarPAR: { value: 58, unit: '%', label: 'Sunlight', detail: 'Stress Sensitivity', color: '#fef08a' },
+      cuticle: { value: 34, unit: '%', label: 'Cell Integrity', detail: 'Wilting & Droop', color: '#fed7aa' }
+    },
+    careTips: [
+      { icon: '⚠️', title: 'Quarantine Plant', desc: 'Isolate immediately from other houseplants to prevent bacterial spread.' },
+      { icon: '✂️', title: 'Prune Wilted Vines', desc: 'Prune infected vines with 70% alcohol sterilized shears.' },
+      { icon: '🚫', title: 'Cease Overhead Mist', desc: 'Avoid splashing water onto leaves; bacteria spreads through moisture.' },
+      { icon: '🪴', title: 'Soil Treatment', desc: 'Repot into fresh, sterile, well-draining aroid potting mix.' }
+    ],
+    pins: [
+      { id: 'mpw1', x: 50, y: 35, label: 'Vascular Collapse', score: 32, color: '#fca5a5', note: 'Bacterial petiole clog' },
+      { id: 'mpw2', x: 32, y: 58, label: 'Limp Blade', score: 35, color: '#fca5a5', note: 'Severe turgor loss' },
+      { id: 'mpw3', x: 68, y: 65, label: 'Infected Stem', score: 29, color: '#f87171', note: 'Internal vascular browning' }
+    ]
+  },
+  money_plant_manganese: {
+    id: 'money_plant_manganese',
+    name: 'Money Plant (Mn Toxicity)',
+    commonName: 'Epipremnum aureum — Manganese Excess',
+    specimenImage: asset('assets/specimens/money_plant_manganese.jpg'),
+    status: 'warning',
+    statusLabel: 'Toxicity Alert: Mn Excess',
+    vigor: 58,
+    colorScheme: {
+      primary: '#fed7aa',       // Soft Peach / Apricot
+      secondary: '#fb923c',
+      surface: 'rgba(254, 215, 170, 0.14)',
+      border: 'rgba(254, 215, 170, 0.35)',
+      glow: 'rgba(254, 215, 170, 0.4)'
+    },
+    metrics: {
+      chlorophyll: { value: 61, unit: '%', label: 'Leaf Vitality', detail: 'Interveinal Specks', color: '#fed7aa' },
+      hydration: { value: 66, unit: '%', label: 'Water Level', detail: 'Moderate Moisture', color: '#bae6fd' },
+      solarPAR: { value: 72, unit: '%', label: 'Sunlight', detail: 'Diffused Morning Light', color: '#fef08a' },
+      cuticle: { value: 54, unit: '%', label: 'Cuticle Health', detail: 'Necrotic Margins', color: '#fca5a5' }
+    },
+    careTips: [
+      { icon: '🧪', title: 'Test Soil pH', desc: 'Low soil pH (<5.2) makes manganese hyper-soluble. Raise pH to 6.2.' },
+      { icon: '🚿', title: 'Flush Potting Mix', desc: 'Flush pot thoroughly with distilled water to leach excess mineral salts.' },
+      { icon: '🥬', title: 'Horticultural Lime', desc: 'Add a pinch of dolomitic lime to buffer soil acidity.' },
+      { icon: '🌱', title: 'Hold Fertilizer', desc: 'Pause all micronutrient fertilizer applications for 4-6 weeks.' }
+    ],
+    pins: [
+      { id: 'mpm1', x: 45, y: 38, label: 'Necrotic Spots', score: 48, color: '#fed7aa', note: 'Manganese deposit specks' },
+      { id: 'mpm2', x: 65, y: 52, label: 'Chlorotic Halo', score: 56, color: '#fed7aa', note: 'Interveinal yellowing' },
+      { id: 'mpm3', x: 30, y: 68, label: 'Curling Tip', score: 51, color: '#fca5a5', note: 'Mineral stress curling' }
+    ]
+  },
   monstera: {
     id: 'monstera',
     name: 'Monstera Deliciosa',
     commonName: 'Swiss Cheese Plant',
-    specimenImage: '/assets/specimens/monstera.jpg',
+    specimenImage: asset('assets/specimens/monstera.jpg'),
     status: 'optimal',
     statusLabel: 'Looking Great',
     vigor: 94,
@@ -69,7 +140,7 @@ export const PLANT_PROFILES = {
     id: 'calathea',
     name: 'Calathea Roseopicta',
     commonName: 'Peacock Plant',
-    specimenImage: '/assets/specimens/calathea.jpg',
+    specimenImage: asset('assets/specimens/calathea.jpg'),
     status: 'warning',
     statusLabel: 'Needs Water Soon',
     vigor: 64,
@@ -102,7 +173,7 @@ export const PLANT_PROFILES = {
     id: 'ficus',
     name: 'Ficus Elastica',
     commonName: 'Rubber Tree',
-    specimenImage: '/assets/specimens/ficus.jpg',
+    specimenImage: asset('assets/specimens/ficus.jpg'),
     status: 'mild_stress',
     statusLabel: 'Doing Well',
     vigor: 76,

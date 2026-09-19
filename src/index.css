@@ -315,6 +315,35 @@ html, body {
   margin-top: 1px;
 }
 
+.pin-note {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.loupe-pin .loupe-target {
+  width: 28px;
+  height: 28px;
+}
+
+.loupe-pin .loupe-target .pin-core {
+  width: 13px;
+  height: 13px;
+  background: radial-gradient(circle, #ffffff 25%, var(--pastel-mint) 100%);
+  box-shadow: 0 0 14px var(--pastel-mint), 0 0 22px rgba(134, 239, 172, 0.6);
+}
+
+.loupe-pin .loupe-target .pin-pulse {
+  border: 2px solid var(--pastel-mint);
+  animation: pinPulseRing 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.loupe-card {
+  border-color: rgba(134, 239, 172, 0.45) !important;
+  box-shadow: 0 0 16px rgba(134, 239, 172, 0.25), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
 /* ==========================================================================
    VisionOS Spatial Chrome (Header & HUD Container)
    ========================================================================== */
@@ -508,7 +537,33 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+
+.light-meter-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(254, 240, 138, 0.09);
+  border: 1px solid rgba(254, 240, 138, 0.2);
+  border-radius: 9px;
+  padding: 3px 8px;
+  margin-bottom: 7px;
+  font-size: 0.6rem;
+}
+
+.light-chip-icon {
+  font-size: 0.72rem;
+}
+
+.light-chip-label {
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+}
+
+.light-chip-val {
+  color: var(--pastel-primrose);
+  font-weight: 700;
 }
 
 .compact-body {

@@ -1,0 +1,45 @@
+{
+  "overall_accuracy": 1.0,
+  "per_class": {
+    "Bacterial wilt disease": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 750
+    },
+    "Healthy": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 750
+    },
+    "Manganese Toxicity": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 750
+    }
+  },
+  "confusion_matrix": [
+    [
+      750,
+      0,
+      0
+    ],
+    [
+      0,
+      750,
+      0
+    ],
+    [
+      0,
+      0,
+      750
+    ]
+  ],
+  "class_names": [
+    "Bacterial wilt disease",
+    "Healthy",
+    "Manganese Toxicity"
+  ]
+}
