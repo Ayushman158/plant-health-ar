@@ -3,7 +3,7 @@
  * Powered by Gemma prompt reasoning & Money Plant pathological intelligence.
  */
 export class AiDocModal {
-  constructor(modalEl, topTriggerBtn, bottomTriggerBtn) {
+  constructor(modalEl, triggerBtn, secondaryBtn) {
     this.modal = modalEl;
     this.closeBtn = modalEl.querySelector('#close-ai-doc-btn');
     this.messagesContainer = modalEl.querySelector('#ai-chat-messages');
@@ -11,8 +11,8 @@ export class AiDocModal {
     this.input = modalEl.querySelector('#ai-user-input');
     this.quickPromptsContainer = modalEl.querySelector('#ai-quick-prompts');
 
-    this.topBtn = topTriggerBtn;
-    this.bottomBtn = bottomTriggerBtn;
+    this.triggerBtn = triggerBtn;
+    this.secondaryBtn = secondaryBtn;
     this.currentPlant = null;
 
     this.initEvents();
@@ -23,11 +23,11 @@ export class AiDocModal {
   }
 
   initEvents() {
-    if (this.topBtn) {
-      this.topBtn.addEventListener('click', () => this.open());
+    if (this.triggerBtn) {
+      this.triggerBtn.addEventListener('click', () => this.open());
     }
-    if (this.bottomBtn) {
-      this.bottomBtn.addEventListener('click', () => this.open());
+    if (this.secondaryBtn) {
+      this.secondaryBtn.addEventListener('click', () => this.open());
     }
     if (this.closeBtn) {
       this.closeBtn.addEventListener('click', () => this.close());
@@ -79,9 +79,12 @@ export class AiDocModal {
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${sender === 'user' ? 'user-msg' : 'doc-msg'}`;
 
-    const avatar = sender === 'user' ? '👤' : '🩺';
+    const avatarSvg = sender === 'user'
+      ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+      : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg>`;
+
     bubble.innerHTML = `
-      <div class="doc-avatar">${avatar}</div>
+      <div class="doc-avatar-wrap" aria-hidden="true">${avatarSvg}</div>
       <div class="bubble-body">
         <p>${text}</p>
       </div>
@@ -98,7 +101,9 @@ export class AiDocModal {
     const typingIndicator = document.createElement('div');
     typingIndicator.className = 'chat-bubble doc-msg typing-msg';
     typingIndicator.innerHTML = `
-      <div class="doc-avatar">🩺</div>
+      <div class="doc-avatar-wrap" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg>
+      </div>
       <div class="bubble-body">
         <span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>
       </div>

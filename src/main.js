@@ -25,7 +25,6 @@ class MoneyPlantDocApp {
     this.shutterBtn = document.getElementById('main-diagnose-btn');
     this.deckContainer = document.getElementById('specimen-deck-container');
     this.specimensToggleBtn = document.getElementById('specimens-toggle-btn');
-    this.topAiBtn = document.getElementById('top-ai-btn');
     this.bottomAiBtn = document.getElementById('bottom-ai-chat-btn');
 
     this.activePlantId = 'money_plant';
@@ -44,7 +43,7 @@ class MoneyPlantDocApp {
     });
     this.pinManager.setSourceCanvas(this.displayCanvas);
 
-    // Conversational Plant Speech Bubble (Planto Style)
+    // Conversational Plant Speech Bubble
     this.speechBubble = new PlantSpeechBubble(document.getElementById('plant-speech-bubble'));
 
     // Planto Minimal Floating Condition Card & Prescription
@@ -56,7 +55,6 @@ class MoneyPlantDocApp {
     // AI Doctor Consultation Modal (Gemma-Powered)
     this.aiDocModal = new AiDocModal(
       document.getElementById('ai-doc-modal'),
-      this.topAiBtn,
       this.bottomAiBtn
     );
 
