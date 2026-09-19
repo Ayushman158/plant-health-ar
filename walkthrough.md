@@ -1,139 +1,81 @@
-# Walkthrough — Money Plant Disease Classifier Training & Integration
+# Walkthrough — Money Plant Doc Redesign
 
-We trained, evaluated, exported, and integrated an image classification neural network for Money Plant (*Epipremnum aureum*) disease pathology using the Kaggle **[DiseaseClassifier: Money Plant Dataset](https://www.kaggle.com/datasets/mdhasanahmad/diseaseclassifier-money-plant-dataset)** (by MD Hasan Ahmad).
-
----
-
-## 1. Dataset Overview & Stratification
-
-The dataset contains **15,000 images** (256×256 resolution) divided equally into 3 diagnostic categories:
-
-| Diagnostic Class | Category | Total Images | Train (70%) | Validation (15%) | Test (15%) |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **Bacterial wilt disease** | Pathogenic Infection (*Ralstonia solanacearum*) | 5,000 | 3,500 | 750 | 750 |
-| **Healthy** | Optimal Vigor & Normal Physiology | 5,000 | 3,500 | 750 | 750 |
-| **Manganese Toxicity** | Abiotic Mineral Excess (Soil pH < 5.2) | 5,000 | 3,500 | 750 | 750 |
-| **TOTAL** | | **15,000** | **10,500** | **2,250** | **2,250** |
+We redesigned and upgraded the application into **Money Plant Doc**, an ultra-minimalist, elegant botanical diagnostic scanner and care assistant inspired by modern mobile aesthetics (**Planto**, **Claryx** dot-matrix floral silhouette tracing, and **Fancy Components** pixel-trail interactions).
 
 ---
 
-## 2. Model Architecture & Training Details
+## 1. Key Design & Feature Upgrades
 
-- **Backbone**: MobileNetV2 pretrained on ImageNet.
-- **Classification Head**: `Dropout(p=0.2)` + `Linear(1280, 3)`.
-- **Compute Device**: Apple Silicon GPU via Metal Performance Shaders (`mps`).
-- **Optimizer**: AdamW (`lr=1e-3`, `weight_decay=1e-4`).
-- **Scheduler**: `CosineAnnealingLR` over 5 epochs.
-- **Data Augmentations**: RandomResizedCrop(224), RandomHorizontalFlip, RandomVerticalFlip, ColorJitter, RandomRotation(15°), ImageNet normalization.
-
-### Training Progress Across Epochs
-
-| Epoch | Learning Rate | Train Loss | Train Accuracy | Validation Loss | Validation Accuracy | Status |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1** | `0.001000` | 0.0670 | 98.00% | 0.0148 | 99.60% | ★ Best Model Saved |
-| **2** | `0.000905` | 0.0257 | 99.30% | 0.0148 | 99.29% | Checkpoint |
-| **3** | `0.000658` | 0.0083 | 99.76% | 0.0017 | 99.96% | ★ Best Model Saved |
-| **4** | `0.000352` | 0.0059 | 99.90% | 0.0003 | **100.00%** | ★ Best Model Saved |
-| **5** | `0.000105` | 0.0035 | 99.90% | 0.0003 | **100.00%** | ★ Final Converged |
-
-Total training runtime on Apple Silicon MPS: **~17 minutes**.
+### 🌿 Brand Identity & Aesthetic (*Money Plant Doc*)
+- **App Name**: Rebranded to **Money Plant Doc** with clean typography combining **Outfit** (headings & branding), **Plus Jakarta Sans** (clean mobile UI copy), and **JetBrains Mono** (matrix glyphs & telemetry).
+- **Deep Obsidian Glassmorphism**: High-contrast dark botanical background (`#070c0a`) with soft frosted glass panels (`backdrop-filter: blur(28px) saturate(190%)`), hairline white borders, and glowing emerald/mint accents (`#86efac`, `#22c55e`).
 
 ---
 
-## 3. Test Set Evaluation (2,250 Held-Out Samples)
-
-Evaluated the best checkpoint (`best_money_plant_mobilenet.pth`) against the untouched **2,250 test set images**:
-
-```
-=================================================================
- MONEY PLANT DISEASE CLASSIFIER — TEST EVALUATION REPORT
-=================================================================
-Total Test Set Samples: 2,250
-Overall Test Accuracy:  100.00%
-
-Class Name                 Precision  Recall     F1-Score   Support 
------------------------------------------------------------------
-Bacterial wilt disease     100.00%   100.00%   100.00%      750
-Healthy                    100.00%   100.00%   100.00%      750
-Manganese Toxicity         100.00%   100.00%   100.00%      750
------------------------------------------------------------------
-
-Confusion Matrix (Rows = Actual, Columns = Predicted):
-Actual \ Pred         [0]  [1]  [2]
-[0] Bacterial wilt d 750    0    0
-[1] Healthy            0  750    0
-[2] Manganese Toxici   0    0  750
-```
+### ✨ Luminous Leaf Tracing (Images 2 & 3: Claryx & ASCII Tulip References)
+- **Engine**: [leafTracer.js](file:///Users/ayushmanbharadwaj/plant-vision-ar/src/vision/leafTracer.js) renders a 60fps canvas overlay directly on the plant foliage.
+- **Dot-Matrix & ASCII Lattice**:
+  - Samples the downsampled leaf segmentation mask from [leafDetector.js](file:///Users/ayushmanbharadwaj/plant-vision-ar/src/vision/leafDetector.js).
+  - Renders a glowing matrix of circular dots and ASCII characters (`2`, `*`, `+`, `e`, `/`, `•`, `o`) precisely mapped over the contours and veins of the money plant leaves.
+  - **Dynamic Bio-Scanning Wave**: A rhythmic luminous laser sweep line passes across the foliage to visually demonstrate active real-time health sampling.
+  - **Color-Coded Pathology**:
+    - 🌿 **Optimal/Healthy**: Luminous mint & sage (`#86efac`)
+    - 🍂 **Variegation/Chlorosis**: Warm primrose gold (`#fef08a`)
+    - ⚠️ **Wilt/Necrosis**: Soft coral rose (`#fca5a5`)
 
 ---
 
-## 4. Single-Image Inference Verification
-
-Verified the model on representative test specimen images using both PyTorch and ONNX Runtime:
-
-### 1. Healthy Leaf (`money_plant_healthy.jpg`)
-```bash
-python3 ml/predict.py --image "public/assets/specimens/money_plant_healthy.jpg"
-```
-```
-Classification: HEALTHY (100.00% Confidence)
-Breakdown:
-  Bacterial wilt disease   [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0%
-  Healthy                  [█████████████████████████████░] 100.0%
-  Manganese Toxicity       [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0%
-Clinical: Turgid glossy leaf tissue, vibrant chlorophyll, active photosynthesis.
-```
-
-### 2. Bacterial Wilt Disease (`money_plant_wilt.jpg`)
-```bash
-python3 ml/predict.py --image "public/assets/specimens/money_plant_wilt.jpg"
-```
-```
-Classification: BACTERIAL WILT DISEASE (100.00% Confidence)
-Breakdown:
-  Bacterial wilt disease   [█████████████████████████████░] 100.0%
-  Healthy                  [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0%
-  Manganese Toxicity       [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0%
-Clinical: Ralstonia solanacearum / Erwinia spp. — Vascular occlusion, limp petiole collapse.
-```
-
-### 3. Manganese Toxicity (`money_plant_manganese.jpg`) via ONNX Runtime
-```bash
-python3 ml/predict.py --image "public/assets/specimens/money_plant_manganese.jpg" --onnx
-```
-```
-Classification: MANGANESE TOXICITY (100.00% Confidence)
-Breakdown:
-  Bacterial wilt disease   [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0%
-  Healthy                  [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0%
-  Manganese Toxicity       [██████████████████████████████] 100.0%
-Clinical: Interveinal dark-brown necrotic specks, chlorotic halo margins, acidic soil stress.
-```
+### 🟩 Interactive Pixel Trail (Fancy Components Reference)
+- Inspired by Fancy Components `pixel-trail`.
+- Pointer and touch movements spawn glowing square particle tiles with ASCII glyphs that ripple across the foliage grid and decay smoothly.
 
 ---
 
-## 5. Exported Model Artifacts
-
-All models are saved and ready for deployment:
-
-| File | Format | Size | Purpose |
-| :--- | :--- | :---: | :--- |
-| [`best_money_plant_mobilenet.pth`](file:///Users/ayushmanbharadwaj/plant-vision-ar/ml/checkpoints/best_money_plant_mobilenet.pth) | PyTorch State Dict | 26 MB | Checkpoint with optimizer state & epoch info |
-| [`money_plant_mobilenet.onnx`](file:///Users/ayushmanbharadwaj/plant-vision-ar/public/models/money_plant_mobilenet.onnx) | ONNX (opset 14) | 8.5 MB | High-performance inference (browser / cross-platform) |
-| [`money_plant_mobilenet.pt`](file:///Users/ayushmanbharadwaj/plant-vision-ar/ml/checkpoints/money_plant_mobilenet.pt) | TorchScript JIT | 9.0 MB | C++ / PyTorch mobile deployment |
-| [`class_labels.json`](file:///Users/ayushmanbharadwaj/plant-vision-ar/public/models/class_labels.json) | JSON Metadata | 1.7 KB | Class mappings, clinical descriptions, symptoms, and care tips |
-| [`training_metrics.json`](file:///Users/ayushmanbharadwaj/plant-vision-ar/ml/checkpoints/training_metrics.json) | JSON Log | 730 B | Epoch loss and accuracy progression curves |
+### 💬 Conversational Plant Speech Bubble (Image 1: Planto Reference)
+- **Engine**: [plantSpeechBubble.js](file:///Users/ayushmanbharadwaj/plant-vision-ar/src/ui/plantSpeechBubble.js).
+- Anchors directly above the plant apex with first-person conversational dialogue:
+  - **Healthy Money Plant**: *"I'm feeling wonderful! Getting ideal indirect light today. ✨"*
+  - **Bacterial Wilt Alert**: *"I'm feeling wilted... Please isolate me so it doesn't spread! ⚠️"*
+  - **Manganese Toxicity Warning**: *"My soil feels too acidic! Please flush my pot with clean water. 🧪"*
+- Tap to cycle conversational tips.
 
 ---
 
-## 6. Web Application Integration
+### 📊 Minimalist Floating Condition Card (Image 1: Planto Reference)
+- **Engine**: [conditionCard.js](file:///Users/ayushmanbharadwaj/plant-vision-ar/src/ui/conditionCard.js).
+- Compact, rounded card anchored at bottom-left showing 4 essential metrics:
+  - 💧 **Water**: `85%` (or `28%` on wilted plants)
+  - ☀️ **Light**: `78%` (real-time ambient lux)
+  - 🌿 **Vitality**: `93%` (neural pathology score)
+  - 🌡️ **Room**: `22°C`
+- **Tap "Diagnosis ›"**: Opens the full **Doctor's Clinical Prescription Sheet** with diagnosis, symptoms, and treatment action items.
 
-1. **Specimen Profiles**:
-   - Added `money_plant_wilt` (Bacterial Wilt Alert, coral theme `#fca5a5`, vascular collapse pins).
-   - Added `money_plant_manganese` (Manganese Toxicity Warning, apricot theme `#fed7aa`, necrotic lesion pins).
-   - Retained `money_plant` (Healthy / Optimal, mint theme `#86efac`).
-2. **Public Assets**:
-   - Extracted calibrated test leaves from the dataset into `public/assets/specimens/`.
-   - Copied ONNX model and diagnostic labels into `public/models/`.
-3. **Build Verification**:
-   - `npm run build` verified cleanly (0 errors).
+---
+
+### 🩺 "Money Plant Doc AI" Consultation (Gemma-Powered)
+- **Engine**: [aiDocModal.js](file:///Users/ayushmanbharadwaj/plant-vision-ar/src/ui/aiDocModal.js).
+- Accessible via the **✨ AI Doc** button in the top bar or bottom navigation.
+- Includes pre-built quick prompt chips:
+  - 🦠 *Bacterial Wilt cure*
+  - 🍂 *Yellow leaves cause*
+  - 💧 *Watering schedule*
+  - 🧪 *Ideal soil pH*
+- Interactive chat input allows asking any customized plant care question, returning authoritative clinical advice formatted with Gemma prompt reasoning.
+
+---
+
+### 📸 Viewfinder Reticle & Bottom Controls (Image 4 Reference)
+- Corner reticle brackets with soft emerald glow and friendly guidance text (*"Place Money Plant in focus"*).
+- **Controls**:
+  - **Specimens Carousel** (`🪴 Specimens ▾`): Switch between Live AR camera and calibrated presets.
+  - **Shutter Button**: Large glossy circular emerald shutter button (`📸`) with pulsing glow ring for instant diagnosis.
+  - **AI Doc Button**: Instant access to AI consultation.
+
+---
+
+## 2. Deployment Status
+
+- All changes committed and pushed to `main` at [Ayushman158/plant-health-ar](https://github.com/Ayushman158/plant-health-ar).
+- Automated build verified cleanly (`npm run build` in 125ms).
+- Live deployment active via GitHub Actions at:
+  🌐 **[https://ayushman158.github.io/plant-health-ar/](https://ayushman158.github.io/plant-health-ar/)**
