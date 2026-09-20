@@ -36,6 +36,18 @@ const CONTOUR_LERP = 0.35;
  */
 const MIN_PLANT_COVERAGE = 0.012;
 
+/**
+ * If the model loaded but has not produced a single mask this long after we
+ * started feeding it frames, stop waiting and fall back to colour detection.
+ *
+ * Gating detection on segmentation is right, but it means any silent failure
+ * inside the model takes the whole app down — which is exactly what happened
+ * when frames were fed from a `display: none` video element on iOS. A scanner
+ * that detects nothing at all is worse than one that occasionally
+ * over-reports, so long as it says which mode it is in.
+ */
+const DEGRADED_AFTER_MS = 4000;
+
 export class PlantAnalyzer {
   constructor() {
     this.detector = new LeafDetector();
@@ -53,6 +65,9 @@ export class PlantAnalyzer {
     this.plantMask = null;
     this.plantMaskW = 0;
     this.plantMaskH = 0;
+    /** When we first fed the loaded segmenter a frame. */
+    this.firstSegmentAttemptAt = 0;
+    this.degraded = false;
   }
 
   async loadSegmenter() {
@@ -74,14 +89,24 @@ export class PlantAnalyzer {
     this.flow.push(sourceCanvas);
 
     if (this.segmenterReady && segmentSource) {
+      if (!this.firstSegmentAttemptAt) this.firstSegmentAttemptAt = timestampMs;
       this.segmenter.update(segmentSource, timestampMs);
     }
+
+    // Has the model ever actually delivered? Once it has, a later gap is just
+    // staleness and hasMask() handles it; never having delivered at all means
+    // something is wrong with it on this device.
+    const neverDelivered = this.segmenter.lastIngestAt === 0;
+    this.degraded = this.segmenter.available &&
+      neverDelivered &&
+      this.firstSegmentAttemptAt > 0 &&
+      timestampMs - this.firstSegmentAttemptAt > DEGRADED_AFTER_MS;
 
     // With the model available, it is the sole authority on whether a plant is
     // in frame. Without it (failed to load on an old browser) we fall back to
     // colour and say so, because some detection beats none — but that mode is
     // explicitly degraded, not equivalent.
-    const hasModel = this.segmenter.available;
+    const hasModel = this.segmenter.available && !this.degraded;
     this.source = hasModel ? 'segmentation' : 'colour';
 
     const detected = hasModel
@@ -138,6 +163,7 @@ export class PlantAnalyzer {
       segmenterReady: this.segmenterReady,
       contour: this.smoothedContour,
       base: this.base,
+      degraded: !hasModel,
       plantMask: this.plantMask,
       plantMaskWidth: this.plantMaskW,
       plantMaskHeight: this.plantMaskH,
@@ -205,6 +231,10 @@ export class PlantAnalyzer {
     this.smoothedContour = [];
     this.base = null;
     this.plantMask = null;
+    // Deliberately NOT resetting firstSegmentAttemptAt/degraded: whether the
+    // model works on this device is a property of the device, not of the
+    // current frame, and re-arming the grace period on every reset would make
+    // the app flip between modes.
   }
 }
 

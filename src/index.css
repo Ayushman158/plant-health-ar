@@ -164,6 +164,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 
 .chip-status[data-status="idle"]     { color: var(--text-faint); }
+.chip-status[data-status="limited"]  { color: var(--amber); }
 .chip-status[data-status="healthy"]  { color: var(--mint); }
 .chip-status[data-status="watch"]    { color: var(--amber); }
 .chip-status[data-status="concern"]  { color: var(--coral); }

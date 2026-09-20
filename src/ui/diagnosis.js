@@ -95,7 +95,8 @@ export class Diagnosis {
     const basis = detected && analysis.source === 'segmentation'
       ? 'Plant located with on-device image segmentation. '
       : detected
-        ? 'Plant located by leaf-colour analysis only; segmentation is unavailable on this device. '
+        ? 'Limited mode: located by leaf colour alone, because segmentation is not working on this device. '
+          + 'Colour cannot tell a leaf from any other green object, so treat detection here with caution. '
         : '';
 
     setText(this.disclosure, basis + DISCLOSURE);

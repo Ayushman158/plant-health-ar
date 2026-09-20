@@ -201,14 +201,14 @@ class App {
 
     if (hasFrame && now - this.lastAnalysisAt >= ANALYSIS_INTERVAL_MS) {
       this.lastAnalysisAt = now;
-      // Segment the video element directly when live (MediaPipe can decode it
-      // without a readback), and the composited canvas otherwise, so gallery
-      // photos get real segmentation rather than silently falling back.
-      this.latest = this.analyzer.analyze(
-        this.displayCanvas,
-        this.camera.isLiveCamera ? this.video : this.displayCanvas,
-        now,
-      );
+      // Always segment the composited canvas, never the <video> element.
+      // The video is `display: none` (the canvas is what's on screen), and
+      // WebGL texture upload from a non-rendered video is unreliable on iOS
+      // Safari — it fails silently, which with segmentation gating detection
+      // means nothing is ever detected. The canvas is drawn every frame
+      // anyway, so this costs nothing and works identically for gallery
+      // stills.
+      this.latest = this.analyzer.analyze(this.displayCanvas, this.displayCanvas, now);
       this.applyAnalysis(this.latest, now);
     }
 
@@ -225,7 +225,13 @@ class App {
 
     if (!analysis.detected) {
       this.setPhase('searching');
-      this.setStatus('idle', 'Searching');
+      this.setStatus(analysis.degraded ? 'limited' : 'idle', analysis.degraded ? 'Limited' : 'Searching');
+      if (analysis.degraded) {
+        this.setGuidance(
+          'Find a plant',
+          'Running on colour detection only — it may mistake other green objects for a plant.',
+        );
+      }
       this.diagnosis.update(analysis);
       this.markers.update([], this.transform());
       return;
@@ -240,7 +246,7 @@ class App {
 
     const status = statusFor(analysis.diagnosis);
     this.overlay.setStatus(status);
-    this.setStatus(status, statusChipLabel(status));
+    this.setStatus(status, analysis.degraded ? 'Limited' : statusChipLabel(status));
 
     if (this.overlay.structureMode && now - this.lastStructureAt > STRUCTURE_INTERVAL_MS) {
       this.lastStructureAt = now;
