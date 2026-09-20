@@ -32,6 +32,15 @@ export class ArOverlay {
     this.structureMode = false;
     this.structure = [];
 
+    // Scratch layers for depth-ordered compositing. `maskCanvas` holds the
+    // plant silhouette; `sceneCanvas` is where ground geometry is drawn before
+    // the silhouette is punched out of it.
+    this.maskCanvas = document.createElement('canvas');
+    this.maskCtx = this.maskCanvas.getContext('2d');
+    this.sceneCanvas = document.createElement('canvas');
+    this.sceneCtx = this.sceneCanvas.getContext('2d');
+    this.maskVersion = null;
+
     this.reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     window.matchMedia?.('(prefers-reduced-motion: reduce)')
       .addEventListener?.('change', (e) => { this.reducedMotion = e.matches; });
@@ -91,11 +100,91 @@ export class ArOverlay {
 
     if (this.reveal <= 0.001 || !analysis?.contour?.length) return;
 
+    // Ground geometry is drawn first and occluded by the plant, so it reads as
+    // lying on the surface the plant stands on rather than painted over it.
+    if (analysis.base && analysis.plantMask) {
+      this.syncMask(analysis, w, h);
+      this.drawGroundRing(analysis.base, w, h);
+    }
+
     if (this.structureMode && this.structure.length) {
       this.drawStructure(this.structure, w, h);
     }
 
     this.drawContour(analysis.contour, w, h);
+  }
+
+  /** Rasterise the binary plant mask into an alpha layer at canvas scale. */
+  syncMask(analysis, w, h) {
+    const { plantMask, plantMaskWidth: mw, plantMaskHeight: mh } = analysis;
+    if (!plantMask || !mw || !mh) return;
+
+    if (this.maskCanvas.width !== mw || this.maskCanvas.height !== mh) {
+      this.maskCanvas.width = mw;
+      this.maskCanvas.height = mh;
+    }
+
+    const img = this.maskCtx.createImageData(mw, mh);
+    const data = img.data;
+    for (let i = 0, p = 3; i < plantMask.length; i++, p += 4) {
+      data[p] = plantMask[i] ? 255 : 0;
+    }
+    this.maskCtx.putImageData(img, 0, 0);
+
+    if (this.sceneCanvas.width !== w || this.sceneCanvas.height !== h) {
+      this.sceneCanvas.width = w;
+      this.sceneCanvas.height = h;
+    }
+  }
+
+  /**
+   * An ellipse on the surface at the base of the plant.
+   *
+   * Drawn into a scratch layer, then the plant silhouette is erased from that
+   * layer before it is composited. The far side of the ring therefore
+   * disappears behind the real pot instead of being painted across it — which
+   * is the difference between geometry that sits in the scene and geometry that
+   * sits on the screen. The occlusion is real: it comes from the segmentation
+   * mask, not from a guessed depth.
+   */
+  drawGroundRing(base, w, h) {
+    const ctx = this.sceneCtx;
+    ctx.clearRect(0, 0, w, h);
+
+    const cx = base.x * w;
+    // Sit the ring slightly above the silhouette's lowest point, where a pot
+    // actually meets the surface rather than where its shadow ends.
+    const cy = (base.y - 0.012) * h;
+    const rx = Math.max(12, base.radius * w * 1.18);
+    // Fixed foreshortening. Without a horizon estimate this is a constant, and
+    // a constant that looks right beats a made-up per-frame "measurement".
+    const ry = rx * 0.26;
+
+    const scale = Math.min(w, h) / 900;
+    const colour = CONTOUR_COLOR[this.status];
+
+    ctx.save();
+    ctx.globalAlpha = this.reveal * 0.55;
+    ctx.strokeStyle = colour;
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = this.reveal * 0.16;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx * 1.3, ry * 1.3, 0, 0, Math.PI * 2);
+    ctx.lineWidth = 1 * scale;
+    ctx.stroke();
+    ctx.restore();
+
+    // Punch the plant out of the ring layer.
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.drawImage(this.maskCanvas, 0, 0, w, h);
+    ctx.restore();
+
+    this.ctx.drawImage(this.sceneCanvas, 0, 0);
   }
 
   drawContour(points, w, h) {

@@ -10,6 +10,7 @@
  */
 
 import { Sheet } from './sheet.js';
+import { statusFor, statusSheetLabel, headlineFor, summaryFor } from './status.js';
 
 const DISCLOSURE =
   'Estimated from leaf colour and frame brightness in the camera image. ' +
@@ -57,8 +58,8 @@ export class Diagnosis {
     this.cardWrap.classList.add('is-visible');
     this.card.dataset.status = status;
 
-    setText(this.title, headlineFor(status, diag));
-    setText(this.desc, summaryFor(diag, analysis));
+    setText(this.title, headlineFor(diag, status));
+    setText(this.desc, summaryFor(diag, analysis, status));
     setText(this.score, `${score}%`);
   }
 
@@ -76,7 +77,7 @@ export class Diagnosis {
     }
 
     this.sheetStatus.dataset.status = status;
-    this.sheetStatus.innerHTML = `<span class="status-dot"></span>${detected ? statusLabel(status) : 'No plant detected'}`;
+    this.sheetStatus.innerHTML = `<span class="status-dot"></span>${detected ? statusSheetLabel(status) : 'No plant detected'}`;
 
     setText(this.metricVitality, detected ? `${diag.healthScore}%` : '—');
     setText(this.metricFoliage, detected ? foliageLabel(diag) : '—');
@@ -103,40 +104,9 @@ export class Diagnosis {
   }
 }
 
-function statusFor(diag) {
-  if (diag.category === 'necrosis') return 'concern';
-  if (diag.category === 'chlorosis') return 'watch';
-  if (diag.healthScore >= 85) return 'healthy';
-  if (diag.healthScore >= 70) return 'watch';
-  return 'concern';
-}
 
-function statusLabel(status) {
-  return { healthy: 'Healthy', watch: 'Worth watching', concern: 'Needs attention' }[status] || 'Unknown';
-}
 
-function headlineFor(status, diag) {
-  if (diag.category === 'necrosis') return 'Possible edge browning';
-  if (diag.category === 'chlorosis') return 'Possible yellowing';
-  if (diag.category === 'dim') return 'Low light';
-  if (diag.category === 'bright') return 'Strong direct light';
-  return status === 'healthy' ? 'Looks healthy' : 'Worth a closer look';
-}
 
-function summaryFor(diag, analysis) {
-  switch (diag.category) {
-    case 'chlorosis':
-      return 'Some yellowing in the foliage. Check soil moisture and drainage.';
-    case 'necrosis':
-      return 'Dry, brown leaf margins. Often low humidity or dry air.';
-    case 'dim':
-      return `Room light reads around ${analysis.light?.lux} lx. Brighter indirect light would help.`;
-    case 'bright':
-      return `Light reads around ${analysis.light?.lux} lx. Shield it from harsh midday sun.`;
-    default:
-      return 'Your money plant looks vibrant with no major issues detected.';
-  }
-}
 
 function foliageLabel(diag) {
   if (diag.category === 'chlorosis') return 'Yellowing';

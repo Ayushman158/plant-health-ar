@@ -97,6 +97,7 @@ export class LeafAnchors {
         existing.y += (region.centroid.y - existing.y) * 0.4;
         existing.area = region.area;
         existing.bbox = region.bbox;
+        existing.markerScale = markerScaleFor(region.area, totalPlant);
         existing.health = health;
         existing.misses = 0;
         existing.confirmations = Math.min(CONFIRM_FRAMES, existing.confirmations + 1);
@@ -108,6 +109,7 @@ export class LeafAnchors {
           y: region.centroid.y,
           area: region.area,
           bbox: region.bbox,
+          markerScale: markerScaleFor(region.area, totalPlant),
           health,
           misses: 0,
           confirmations: 1,
@@ -155,6 +157,17 @@ export class LeafAnchors {
   clear() {
     this.anchors = [];
   }
+}
+
+/**
+ * Annotation size from the region's share of the plant. A near leaf fills more
+ * of the mask than a far one, so this is a real apparent-size cue — but it is
+ * only that, and a genuinely large distant leaf will read as near.
+ */
+function markerScaleFor(area, totalPlant) {
+  if (!totalPlant) return 1;
+  const share = Math.sqrt(area / totalPlant);
+  return Math.min(1.3, Math.max(0.82, 0.68 + share * 0.95));
 }
 
 function countSet(mask) {

@@ -7,6 +7,7 @@ import { LeafMarkers } from './ui/leafMarkers.js';
 import { Diagnosis } from './ui/diagnosis.js';
 import { Sheet } from './ui/sheet.js';
 import { coverTransform } from './ui/viewportMap.js';
+import { statusFor, statusChipLabel } from './ui/status.js';
 
 /** Vision runs at ~30 Hz; the overlay still draws every frame. */
 const ANALYSIS_INTERVAL_MS = 33;
@@ -188,7 +189,7 @@ class App {
 
     const status = statusFor(analysis.diagnosis);
     this.overlay.setStatus(status);
-    this.setStatus(status, statusLabel(status));
+    this.setStatus(status, statusChipLabel(status));
 
     if (this.overlay.structureMode && now - this.lastStructureAt > STRUCTURE_INTERVAL_MS) {
       this.lastStructureAt = now;
@@ -227,17 +228,7 @@ class App {
   }
 }
 
-function statusFor(diag = {}) {
-  if (diag.category === 'necrosis') return 'concern';
-  if (diag.category === 'chlorosis') return 'watch';
-  if (diag.healthScore >= 85) return 'healthy';
-  if (diag.healthScore >= 70) return 'watch';
-  return 'concern';
-}
 
-function statusLabel(status) {
-  return { healthy: 'Healthy', watch: 'Watch', concern: 'Attention' }[status] || 'Searching';
-}
 
 window.addEventListener('DOMContentLoaded', () => {
   const app = new App();

@@ -76,6 +76,15 @@ export class LeafMarkers {
       entry.root.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
       entry.root.classList.toggle('is-drifting', !leaf.tracked);
 
+      // Scale the whole annotation with the region's apparent size. This is a
+      // size cue, not a depth measurement — but a marker on a large near leaf
+      // reading larger than one on a small far leaf is what stops the layer
+      // looking like a flat HUD pasted over the picture.
+      if (entry.lastScale !== leaf.markerScale) {
+        entry.lastScale = leaf.markerScale;
+        entry.root.style.setProperty('--marker-scale', leaf.markerScale.toFixed(2));
+      }
+
       this.updateContent(entry, leaf);
     }
 
@@ -101,6 +110,12 @@ export class LeafMarkers {
         <span class="leaf-marker-ring"></span>
         <span class="leaf-marker-core"></span>
       </button>
+      <span class="leaf-leader" aria-hidden="true"></span>
+      <div class="leaf-marker-chip" aria-hidden="true">
+        <span class="leaf-chip-dot"></span>
+        <span class="leaf-chip-name"></span>
+        <span class="leaf-chip-status"></span>
+      </div>
       <div class="leaf-marker-card" role="group">
         <div class="leaf-marker-head">
           <span class="leaf-marker-name"></span>
@@ -113,10 +128,13 @@ export class LeafMarkers {
     return {
       root,
       button: root.querySelector('.leaf-marker-dot'),
+      chipName: root.querySelector('.leaf-chip-name'),
+      chipStatus: root.querySelector('.leaf-chip-status'),
       name: root.querySelector('.leaf-marker-name'),
       statusText: root.querySelector('.leaf-status-text'),
       metrics: root.querySelector('.leaf-marker-metrics'),
       lastSignature: '',
+      lastScale: null,
     };
   }
 
@@ -138,6 +156,8 @@ export class LeafMarkers {
 
     entry.name.textContent = name;
     entry.statusText.textContent = health.label || STATUS_TEXT[status];
+    entry.chipName.textContent = name;
+    entry.chipStatus.textContent = shortStatus(status);
 
     if (status === 'unknown') {
       entry.metrics.innerHTML = `<div class="leaf-metric"><dt>Colour</dt><dd>Too few pixels to read</dd></div>`;
@@ -156,6 +176,10 @@ export class LeafMarkers {
     this.elements.clear();
     this.selectedId = null;
   }
+}
+
+function shortStatus(status) {
+  return { healthy: 'Healthy', watch: 'Yellowing', concern: 'Browning', unknown: '—' }[status] || '—';
 }
 
 function describeColour(health) {

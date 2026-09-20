@@ -278,9 +278,84 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 .leaf-marker.is-open .leaf-marker-ring { transform: scale(1.22); }
 
+/* --- persistent callout: leader line + compact chip ----------------------
+   A bare dot reads as a tracking point; a dot tethered to a small label reads
+   as an annotation attached to the thing itself. The chip and leader scale
+   together with --marker-scale so a nearer leaf carries a larger callout. */
+
+.leaf-marker { --marker-scale: 1; --leader-len: 34px; --leader-angle: -32deg; }
+
+.leaf-leader {
+  position: absolute;
+  left: 0; top: 0;
+  width: calc(var(--leader-len) * var(--marker-scale));
+  height: 1.5px;
+  background: linear-gradient(to right, var(--mint), rgba(134, 239, 172, 0.55));
+  transform-origin: left center;
+  transform: rotate(var(--leader-angle));
+  opacity: 0.9;
+  /* The camera behind is mid-tone and busy; without this the hairline
+     disappears against pale leaves and the chip looks unattached. */
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+}
+
+.leaf-marker[data-status="watch"]   .leaf-leader { background: linear-gradient(to right, var(--amber), rgba(253, 216, 154, 0.35)); }
+.leaf-marker[data-status="concern"] .leaf-leader { background: linear-gradient(to right, var(--coral), rgba(252, 165, 165, 0.35)); }
+
+.leaf-marker-chip {
+  position: absolute;
+  left: calc(var(--leader-len) * var(--marker-scale) * 0.86);
+  top: calc(var(--leader-len) * var(--marker-scale) * -0.56);
+  transform: translateY(-50%) scale(var(--marker-scale));
+  transform-origin: left center;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: var(--glass-strong);
+  border: 1px solid var(--hairline);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease);
+}
+
+.leaf-chip-dot {
+  width: 5px; height: 5px; border-radius: 50%; flex: none;
+  background: var(--mint);
+  box-shadow: 0 0 6px currentColor;
+}
+.leaf-marker[data-status="watch"]   .leaf-chip-dot { background: var(--amber); }
+.leaf-marker[data-status="concern"] .leaf-chip-dot { background: var(--coral); }
+.leaf-marker[data-status="unknown"] .leaf-chip-dot { background: var(--text-faint); }
+
+.leaf-chip-name {
+  font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--text);
+}
+
+.leaf-chip-status { font-size: 9.5px; font-weight: 400; color: var(--text-dim); }
+
+/* Mirror the callout inboard on the right half of the screen. */
+.leaf-marker.flip-left { --leader-angle: -148deg; }
+
+.leaf-marker.flip-left .leaf-marker-chip {
+  left: auto;
+  right: calc(var(--leader-len) * var(--marker-scale) * 0.86);
+  transform-origin: right center;
+}
+
+/* The expanded card replaces the chip rather than stacking with it. */
+.leaf-marker.is-open .leaf-marker-chip { opacity: 0; }
+
+.leaf-marker-dot { transform: scale(var(--marker-scale)); }
+
 .leaf-marker-card {
   position: absolute;
-  left: 22px; top: -14px;
+  left: 26px; top: -14px;
   width: 196px;
   padding: 11px 13px 12px;
   border-radius: var(--radius-sm);

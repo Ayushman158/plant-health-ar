@@ -17,6 +17,7 @@ import { LeafDetector, FOLIAGE, CHLOROSIS, VARIEGATION } from './leafDetector.js
 import { PlantSegmenter } from './plantSegmenter.js';
 import { FlowTracker } from './flowTracker.js';
 import { LeafAnchors } from './leafAnchors.js';
+import { HealthStabilizer } from './healthStabilizer.js';
 import { labelComponents, silhouette } from './maskAnalysis.js';
 
 /** Frames the silhouette is eased over, to settle jitter without feeling laggy. */
@@ -41,12 +42,17 @@ export class PlantAnalyzer {
     this.segmenter = new PlantSegmenter();
     this.flow = new FlowTracker(160, 120);
     this.anchors = new LeafAnchors(this.flow);
+    this.health = new HealthStabilizer();
 
     this.contour = [];
     this.smoothedContour = [];
     this.source = 'colour';
     this.segmenterReady = false;
     this.lastSegmentAt = -1;
+    this.base = null;
+    this.plantMask = null;
+    this.plantMaskW = 0;
+    this.plantMaskH = 0;
   }
 
   async loadSegmenter() {
@@ -86,6 +92,9 @@ export class PlantAnalyzer {
     this.anchors.advance();
 
     if (detected) {
+      this.plantMask = plantMask;
+      this.plantMaskW = maskW;
+      this.plantMaskH = maskH;
       this.updateContour(plantMask, maskW, maskH);
 
       // Reconcile only when a genuinely new segmentation result landed;
@@ -103,15 +112,26 @@ export class PlantAnalyzer {
     } else {
       this.contour = [];
       this.smoothedContour = [];
+      this.plantMask = null;
+      this.base = null;
       this.anchors.clear();
     }
 
+    const diagnosis = detected
+      ? this.health.update(colour.diagnosis, colour.light?.lux ?? 400, timestampMs)
+      : colour.diagnosis;
+
     return {
       ...colour,
+      diagnosis,
       detected,
       source: this.source,
       segmenterReady: this.segmenterReady,
       contour: this.smoothedContour,
+      base: this.base,
+      plantMask: this.plantMask,
+      plantMaskWidth: this.plantMaskW,
+      plantMaskHeight: this.plantMaskH,
       leaves: this.anchors.visible(),
       plantCoverage: useSegmentation
         ? Math.round(this.segmenter.coverage * 100)
@@ -124,10 +144,30 @@ export class PlantAnalyzer {
     if (components.length === 0) {
       this.contour = [];
       this.smoothedContour = [];
+      this.base = null;
       return;
     }
 
-    const points = silhouette(mask, w, h, components[0], { epsilon: 1.4, smoothing: 2 });
+    // Where the plant meets the surface, used to anchor the grounding ring.
+    // Bottom-centre of the dominant component's bounding box.
+    const bbox = components[0].bbox;
+    const base = {
+      x: bbox.x + bbox.width * 0.5,
+      y: bbox.y + bbox.height,
+      radius: bbox.width * 0.5,
+    };
+    this.base = this.base
+      ? {
+          x: this.base.x + (base.x - this.base.x) * 0.2,
+          y: this.base.y + (base.y - this.base.y) * 0.2,
+          radius: this.base.radius + (base.radius - this.base.radius) * 0.2,
+        }
+      : base;
+
+    // Calmer than the pixel-accurate trace: at 256px mask resolution upscaled
+    // to a phone screen, every boundary wobble is magnified ~6x and the outline
+    // reads as noisy rather than confident.
+    const points = silhouette(mask, w, h, components[0], { epsilon: 2.4, smoothing: 3 });
     if (points.length < 8) return;
 
     this.contour = points;
@@ -151,8 +191,11 @@ export class PlantAnalyzer {
   reset() {
     this.flow.reset();
     this.anchors.clear();
+    this.health.reset();
     this.contour = [];
     this.smoothedContour = [];
+    this.base = null;
+    this.plantMask = null;
   }
 }
 
