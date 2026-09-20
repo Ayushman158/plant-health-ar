@@ -28,6 +28,17 @@ const POTTED_PLANT_FALLBACK_INDEX = 16;
 const STALE_AFTER_MS = 700;
 
 /**
+ * Longest edge of the frame actually handed to the model.
+ *
+ * A phone delivers 1080x1920, so the returned category mask was 2.07M pixels
+ * and every stage downstream paid for it — the per-pixel ingest loop, then
+ * component labelling allocating two 8MB typed arrays per reconcile. Measured
+ * on device: 15fps. DeepLabV3 runs at 257x257 internally regardless, so the
+ * extra resolution buys nothing and costs everything.
+ */
+const SEGMENT_INPUT_MAX = 512;
+
+/**
  * How long a single segmentation may be outstanding before we assume its
  * callback is never coming and allow the next one.
  *
@@ -87,6 +98,20 @@ export class PlantSegmenter {
     /** When the outstanding request started, for the watchdog. */
     this.inFlightSince = 0;
     this.droppedCallbacks = 0;
+
+    /**
+     * What the model actually saw: the most common non-background category and
+     * its share of the frame. When the plant class comes back empty this is
+     * the difference between "the model is broken" and "the model is looking
+     * at a television".
+     */
+    this.dominantLabel = '-';
+    this.dominantShare = 0;
+    this.labels = [];
+
+    // Frames are downscaled into this before being segmented.
+    this.inputCanvas = document.createElement('canvas');
+    this.inputCtx = this.inputCanvas.getContext('2d');
     this.reloads = 0;
     this.reloading = false;
   }
@@ -111,6 +136,7 @@ export class PlantSegmenter {
       });
 
       this.resolvePlantIndex();
+      this.labels = this.segmenter.getLabels?.() || [];
       this.available = true;
     } catch (err) {
       this.failureReason = err?.message || String(err);
@@ -153,6 +179,9 @@ export class PlantSegmenter {
     if (timestampMs - this.lastRunAt < TARGET_INTERVAL_MS) return;
     if (!source || !source.width || !source.height) return;
 
+    const input = this.downscale(source);
+    if (!input) return;
+
     this.lastRunAt = timestampMs;
     this.inFlight = true;
     this.inFlightSince = timestampMs;
@@ -160,7 +189,7 @@ export class PlantSegmenter {
     this.timestamp = Math.max(this.timestamp + 1, Math.round(timestampMs));
 
     try {
-      this.segmenter.segmentForVideo(source, this.timestamp, (result) => {
+      this.segmenter.segmentForVideo(input, this.timestamp, (result) => {
         try {
           this.ingest(result);
           this.lastIngestAt = timestampMs;
@@ -183,6 +212,25 @@ export class PlantSegmenter {
     }
   }
 
+  /** Aspect-preserving downscale, so normalised coordinates stay valid. */
+  downscale(source) {
+    const sw = source.videoWidth || source.width;
+    const sh = source.videoHeight || source.height;
+    if (!sw || !sh) return null;
+
+    const scale = Math.min(1, SEGMENT_INPUT_MAX / Math.max(sw, sh));
+    const w = Math.max(1, Math.round(sw * scale));
+    const h = Math.max(1, Math.round(sh * scale));
+
+    if (this.inputCanvas.width !== w || this.inputCanvas.height !== h) {
+      this.inputCanvas.width = w;
+      this.inputCanvas.height = h;
+    }
+
+    this.inputCtx.drawImage(source, 0, 0, w, h);
+    return this.inputCanvas;
+  }
+
   ingest(result) {
     const categoryMask = result.categoryMask;
     if (!categoryMask) return;
@@ -199,13 +247,27 @@ export class PlantSegmenter {
 
     const plant = this.plantIndex;
     let hits = 0;
+    // Tally every class, not just the plant, so a zero result can be explained.
+    const histogram = new Uint32Array(32);
+
     for (let i = 0; i < categories.length; i++) {
-      const isPlant = categories[i] === plant ? 1 : 0;
+      const cat = categories[i];
+      const isPlant = cat === plant ? 1 : 0;
       this.mask[i] = isPlant;
       hits += isPlant;
+      if (cat < 32) histogram[cat]++;
     }
 
     this.coverage = hits / categories.length;
+
+    // Index 0 is background; the interesting answer is what else it found.
+    let top = 0;
+    let topCount = 0;
+    for (let c = 1; c < 32; c++) {
+      if (histogram[c] > topCount) { topCount = histogram[c]; top = c; }
+    }
+    this.dominantLabel = topCount > 0 ? (this.labels[top] || 'class ' + top) : 'none';
+    this.dominantShare = topCount / categories.length;
   }
 
   /**

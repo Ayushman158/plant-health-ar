@@ -18,7 +18,7 @@ import { PlantSegmenter } from './plantSegmenter.js';
 import { FlowTracker } from './flowTracker.js';
 import { LeafAnchors } from './leafAnchors.js';
 import { HealthStabilizer } from './healthStabilizer.js';
-import { labelComponents, silhouette } from './maskAnalysis.js';
+import { labelComponents, silhouette, shapeStats } from './maskAnalysis.js';
 
 /** Frames the silhouette is eased over, to settle jitter without feeling laggy. */
 const CONTOUR_LERP = 0.35;
@@ -35,6 +35,29 @@ const CONTOUR_LERP = 0.35;
  * packaging; only the object model can, so the object model decides.
  */
 const MIN_PLANT_COVERAGE = 0.012;
+
+/**
+ * Fallback acceptance when the object model does not recognise a plant.
+ *
+ * DeepLabV3 knows 21 Pascal VOC classes and is unreliable on casual phone
+ * framing: measured on our own specimens it called a macro leaf shot "person"
+ * and another "bottle". Gating detection on it alone therefore fails on
+ * exactly the shots a user is most likely to take, which is why the scanner
+ * stopped finding anything.
+ *
+ * So when the model is unsure, fall back to the *shape* of the green region
+ * rather than merely its presence. `fill` — the share of its bounding box the
+ * region occupies — separates the two cases in measurement: foliage is ragged
+ * and gappy (0.44-0.74 across six specimens) while packaging is a solid block
+ * (1.00 for a cap, a packet and a book). Compactness was also tried and
+ * discarded: it overlapped (0.768 for a leaf close-up against 0.755 for a
+ * bottle cap) and would have misclassified both.
+ *
+ * This is a heuristic, not recognition. Detections that rest on it are marked
+ * `provisional` and the diagnosis sheet says so.
+ */
+const PROVISIONAL_MAX_FILL = 0.82;
+const PROVISIONAL_MIN_AREA = 0.03;
 
 /**
  * If the model loaded but has not produced a single mask this long after we
@@ -113,20 +136,32 @@ export class PlantAnalyzer {
       this.segmenter.reloadIfStalled(timestampMs);
     }
 
-    // With the model available, it is the sole authority on whether a plant is
-    // in frame. Without it (failed to load on an old browser) we fall back to
-    // colour and say so, because some detection beats none — but that mode is
-    // explicitly degraded, not equivalent.
+    // Shape of the green region, as a second opinion on whether it is
+    // foliage-shaped at all rather than merely green.
+    this.shape = shapeStats(toBinary(colour.mask), colour.maskWidth, colour.maskHeight);
+
     const hasModel = this.segmenter.available && !this.degraded;
-    this.source = hasModel ? 'segmentation' : 'colour';
 
-    const detected = hasModel
-      ? this.segmenter.hasMask(timestampMs) && this.segmenter.coverage >= MIN_PLANT_COVERAGE
-      : colour.detected;
+    const confident = hasModel &&
+      this.segmenter.hasMask(timestampMs) &&
+      this.segmenter.coverage >= MIN_PLANT_COVERAGE;
 
-    const plantMask = hasModel ? this.segmenter.mask : toBinary(colour.mask);
-    const maskW = hasModel ? this.segmenter.width : colour.maskWidth;
-    const maskH = hasModel ? this.segmenter.height : colour.maskHeight;
+    const foliageShaped = Boolean(this.shape) &&
+      this.shape.areaShare >= PROVISIONAL_MIN_AREA &&
+      this.shape.fill <= PROVISIONAL_MAX_FILL;
+
+    // Colour alone never decides: it must also look like foliage rather than
+    // like a box.
+    const provisional = !confident && colour.detected && foliageShaped;
+
+    const detected = confident || provisional;
+    const confidence = confident ? 'recognised' : (provisional ? 'provisional' : 'none');
+
+    // Geometry follows whichever source actually found the plant.
+    const useSegMask = confident;
+    const plantMask = useSegMask ? this.segmenter.mask : toBinary(colour.mask);
+    const maskW = useSegMask ? this.segmenter.width : colour.maskWidth;
+    const maskH = useSegMask ? this.segmenter.height : colour.maskHeight;
 
     this.anchors.advance();
 
@@ -158,7 +193,7 @@ export class PlantAnalyzer {
 
     // Recount the pathology rates using only pixels inside the plant, so
     // background yellows and greens cannot drag the score around.
-    const confined = detected && hasModel && plantMask
+    const confined = detected && useSegMask && plantMask
       ? confineDiagnosis(colour, plantMask, maskW, maskH)
       : colour.diagnosis;
 
@@ -170,11 +205,13 @@ export class PlantAnalyzer {
       ...colour,
       diagnosis,
       detected,
-      source: this.source,
+      source: confident ? 'segmentation' : 'shape+colour',
       segmenterReady: this.segmenterReady,
       contour: this.smoothedContour,
       base: this.base,
       degraded: !hasModel,
+      shape: this.shape,
+      confidence,
       segmenterHealth: {
         available: this.segmenter.available,
         stalledForMs: Math.round(stalledFor),

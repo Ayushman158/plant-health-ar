@@ -92,12 +92,14 @@ export class Diagnosis {
       ? 'Move it nearer a window with filtered, indirect light.'
       : 'Keep in bright, indirect light.');
 
-    const basis = detected && analysis.source === 'segmentation'
-      ? 'Plant located with on-device image segmentation. '
-      : detected
-        ? 'Limited mode: located by leaf colour alone, because segmentation is not working on this device. '
-          + 'Colour cannot tell a leaf from any other green object, so treat detection here with caution. '
-        : '';
+    let basis = '';
+    if (detected && analysis.confidence === 'recognised') {
+      basis = 'Plant recognised by on-device image segmentation. ';
+    } else if (detected) {
+      basis = 'Provisional: the object model did not recognise a plant here, so this rests on the '
+        + 'colour and shape of the green region. That is a heuristic, not recognition — it can be '
+        + 'fooled by other irregular green objects. ';
+    }
 
     setText(this.disclosure, basis + DISCLOSURE);
 

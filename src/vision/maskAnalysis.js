@@ -308,3 +308,41 @@ export function medialAxis(mask, w, h, { minThickness = 1.6, stride = 1 } = {}) 
 
   return points;
 }
+
+
+/**
+ * Shape statistics for the largest component of a binary mask.
+ *
+ * Used to tell foliage from packaging without an object model. Leaves form an
+ * irregular region: lobed, gappy, long perimeter for its area. A bottle cap or
+ * a cereal packet is a compact blob that nearly fills its bounding box.
+ *
+ * `compactness` is 4*pi*area / perimeter^2 — 1.0 for a perfect circle, lower
+ * the more ragged the outline. `fill` is the share of the bounding box the
+ * component occupies.
+ */
+export function shapeStats(mask, w, h, minArea = 32) {
+  const { components } = labelComponents(mask, w, h, minArea);
+  if (components.length === 0) return null;
+
+  const c = components[0];
+  const boundary = traceBoundary(mask, w, h, c.seed);
+  if (boundary.length < 8) return null;
+
+  let perimeter = 0;
+  for (let i = 1; i < boundary.length; i++) {
+    const dx = boundary[i].x - boundary[i - 1].x;
+    const dy = boundary[i].y - boundary[i - 1].y;
+    perimeter += Math.hypot(dx, dy);
+  }
+  if (perimeter <= 0) return null;
+
+  const boxArea = c.bbox.width * w * c.bbox.height * h;
+
+  return {
+    areaShare: c.area / (w * h),
+    compactness: (4 * Math.PI * c.area) / (perimeter * perimeter),
+    fill: boxArea > 0 ? c.area / boxArea : 0,
+    components: components.length,
+  };
+}
