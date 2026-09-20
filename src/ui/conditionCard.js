@@ -41,18 +41,28 @@ export class ConditionCard {
     this.valLight = cardAnchorEl.querySelector('#val-light');
     this.valVigor = cardAnchorEl.querySelector('#val-vigor');
     this.valTemp = cardAnchorEl.querySelector('#val-temp');
+    this.statusTitle = cardAnchorEl.querySelector('#card-status-title');
     this.statusSub = cardAnchorEl.querySelector('#card-status-sub');
+    this.liveAdviceText = cardAnchorEl.querySelector('#live-diagnostic-text');
     this.expandBtn = cardAnchorEl.querySelector('#expand-prescription-btn');
 
+    this.rxSnapshotWrap = document.getElementById('rx-snapshot-wrap');
+    this.rxSnapshotImg = document.getElementById('rx-snapshot-img');
     this.rxScore = document.getElementById('rx-score');
     this.rxName = document.getElementById('rx-name');
     this.rxStatusTag = document.getElementById('rx-status-tag');
     this.rxDesc = document.getElementById('rx-description');
     this.rxCareList = document.getElementById('rx-care-list');
     this.closeRxBtn = document.getElementById('close-prescription-btn');
+    this.consultAiBtn = document.getElementById('rx-consult-ai-btn');
 
-    this.currentProfile = null;
+    this.latestAnalysis = null;
+    this.onConsultAi = null;
     this.initEvents();
+  }
+
+  setAiConsultCallback(cb) {
+    this.onConsultAi = cb;
   }
 
   initEvents() {
@@ -95,6 +105,16 @@ export class ConditionCard {
       });
     }
 
+    if (this.consultAiBtn) {
+      this.consultAiBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closePrescription();
+        if (this.onConsultAi) {
+          this.onConsultAi(this.latestAnalysis);
+        }
+      });
+    }
+
     if (this.modal) {
       this.modal.addEventListener('click', (e) => {
         if (e.target === this.modal) {
@@ -102,7 +122,6 @@ export class ConditionCard {
         }
       });
 
-      // Mobile touch swipe-down to dismiss sheet
       let touchStartY = 0;
       this.modal.addEventListener('touchstart', (e) => {
         touchStartY = e.touches[0].clientY;
@@ -117,82 +136,159 @@ export class ConditionCard {
     }
   }
 
-  setProfile(profile) {
-    this.currentProfile = profile;
-    this.updateCardValues();
-  }
-
   updateLiveTelemetry(analysis) {
-    if (!analysis || !this.currentProfile) return;
+    if (!analysis) return;
+    this.latestAnalysis = analysis;
 
-    if (analysis.light && this.valLight) {
-      this.valLight.textContent = `${analysis.light.lux} lx`;
-    }
+    const isDetected = analysis.detected;
+    const diag = analysis.diagnosis || {};
 
-    if (analysis.pathology && this.valVigor) {
-      this.valVigor.textContent = `${analysis.pathology.healthScore}%`;
+    if (isDetected) {
+      if (this.statusTitle) {
+        this.statusTitle.textContent = diag.headline || 'Money Plant Locked';
+      }
+      if (this.statusSub) {
+        this.statusSub.textContent = `${diag.healthScore}% Vitality · ${analysis.light?.label || 'Directing'}`;
+        this.statusSub.style.color = diag.healthScore >= 80 ? '#86efac' : '#fed7aa';
+      }
+      if (this.liveAdviceText) {
+        this.liveAdviceText.textContent = diag.advice || 'Plant foliage is clearly focused in viewfinder.';
+      }
+      if (this.valVigor) {
+        this.valVigor.textContent = `${diag.healthScore}%`;
+      }
+      if (this.valLight && analysis.light) {
+        this.valLight.textContent = `${analysis.light.lux} lx`;
+      }
+      if (this.valWater) {
+        this.valWater.textContent = `${analysis.liveChlorophyll}%`;
+      }
+      if (this.valTemp) {
+        this.valTemp.textContent = `${analysis.coverage}%`;
+      }
+    } else {
+      if (this.statusTitle) {
+        this.statusTitle.textContent = 'Searching Foliage...';
+      }
+      if (this.statusSub) {
+        this.statusSub.textContent = 'Hold Money Plant in viewfinder';
+        this.statusSub.style.color = 'var(--mint-primary)';
+      }
+      if (this.liveAdviceText) {
+        this.liveAdviceText.textContent = 'Point camera at Money Plant leaves to begin real-time telemetry analysis.';
+      }
+      if (this.valVigor) this.valVigor.textContent = '--%';
+      if (this.valLight && analysis.light) this.valLight.textContent = `${analysis.light.lux} lx`;
+      if (this.valWater) this.valWater.textContent = '--%';
+      if (this.valTemp) this.valTemp.textContent = '--%';
     }
   }
 
-  updateCardValues() {
-    const p = this.currentProfile;
-    if (!p) return;
+  openPrescription(analysis = null, snapshotDataUrl = null) {
+    const a = analysis || this.latestAnalysis;
+    const diag = a?.diagnosis || {};
+    const light = a?.light || { lux: 420, label: 'Bright Indirect' };
+    const score = diag.healthScore || 94;
 
-    if (this.statusSub) {
-      this.statusSub.textContent = p.statusLabel || 'Healthy';
-      this.statusSub.style.color = p.colorScheme?.primary || '#86efac';
+    // 1. Snapshot thumbnail preview
+    if (this.rxSnapshotImg && snapshotDataUrl) {
+      this.rxSnapshotImg.src = snapshotDataUrl;
+      this.rxSnapshotWrap.style.display = 'block';
+    } else if (this.rxSnapshotWrap) {
+      this.rxSnapshotWrap.style.display = 'none';
     }
 
-    if (this.valWater && p.metrics?.hydration) {
-      this.valWater.textContent = `${p.metrics.hydration.value}%`;
-    }
-
-    if (this.valLight && p.metrics?.solarPAR) {
-      this.valLight.textContent = `${p.metrics.solarPAR.value}%`;
-    }
-
-    if (this.valVigor) {
-      this.valVigor.textContent = `${p.vigor}%`;
-    }
-
-    if (this.valTemp) {
-      this.valTemp.textContent = '22°C';
-    }
-  }
-
-  openPrescription() {
-    const p = this.currentProfile;
-    if (!p || !this.modal) return;
-
+    // 2. Score & diagnosis badge
     if (this.rxScore) {
-      this.rxScore.textContent = `${p.vigor}%`;
-      this.rxScore.style.borderColor = p.colorScheme?.primary || '#86efac';
-      this.rxScore.style.color = p.colorScheme?.primary || '#86efac';
+      this.rxScore.textContent = `${score}%`;
+      const scoreColor = score >= 80 ? '#86efac' : (score >= 65 ? '#fed7aa' : '#fca5a5');
+      this.rxScore.style.borderColor = scoreColor;
+      this.rxScore.style.color = scoreColor;
     }
 
     if (this.rxName) {
-      this.rxName.textContent = p.name;
+      this.rxName.textContent = 'Money Plant (Epipremnum aureum)';
     }
 
     if (this.rxStatusTag) {
-      this.rxStatusTag.textContent = p.statusLabel;
-      this.rxStatusTag.style.background = p.colorScheme?.surface || 'rgba(134, 239, 172, 0.15)';
-      this.rxStatusTag.style.color = p.colorScheme?.primary || '#86efac';
+      this.rxStatusTag.textContent = diag.headline || 'Optimal Cellular Vigor';
+      this.rxStatusTag.style.color = score >= 80 ? '#86efac' : '#fed7aa';
     }
 
+    // 3. Clinical Observation Paragraph
     if (this.rxDesc) {
-      if (p.id === 'money_plant_wilt') {
-        this.rxDesc.textContent = 'Bacterial Wilt infection detected. Vascular xylem tissue is compromised by Ralstonia colonies, causing drooping and petiole collapse.';
-      } else if (p.id === 'money_plant_manganese') {
-        this.rxDesc.textContent = 'Abiotic Manganese toxicity observed. Characterized by interveinal dark necrotic flecks and marginal chlorosis from acidic potting substrate.';
-      } else {
-        this.rxDesc.textContent = 'Turgid, glossy leaf tissue with active chlorophyll absorption. Plant is well-nourished and maintaining optimal cellular vigor.';
-      }
+      const chlor = a?.liveChlorophyll || 88;
+      const cov = a?.coverage || 18;
+      this.rxDesc.textContent = `${diag.advice || 'Specimen evaluated via live computer vision.'} Real-time photometrics measure ${light.lux} lx (${light.label}), with ${chlor}% active chlorophyll absorption and ${cov}% screen foliage coverage.`;
     }
 
+    // 4. Tailored Actionable Care Plan
     if (this.rxCareList) {
-      const tips = p.careTips || [];
-      this.rxCareList.innerHTML = tips.map(t => `
+      let careTips = [];
+
+      if (diag.category === 'chlorosis') {
+        careTips = [
+          {
+            title: 'Watering Adjustment',
+            desc: 'Yellowing indicates saturated soil. Pause watering until top 2 inches of soil feel dry. Empty any standing water in drainage saucers.'
+          },
+          {
+            title: 'Drainage Check',
+            desc: 'Confirm potting container has open drainage holes. Money Plants suffer root hypoxia if kept in waterlogged substrate.'
+          },
+          {
+            title: 'Air Circulation',
+            desc: 'Keep in an aerated location to facilitate natural leaf transpiration.'
+          }
+        ];
+      } else if (diag.category === 'necrosis') {
+        careTips = [
+          {
+            title: 'Humidity Management',
+            desc: 'Crispy leaf tips indicate dry air. Mist foliage 2-3 times weekly with room-temperature water.'
+          },
+          {
+            title: 'Avoid Air Drafts',
+            desc: 'Move plant away from cold air conditioners, heaters, or forced air vents that dehydrate leaf tissue.'
+          },
+          {
+            title: 'Hydration Check',
+            desc: 'Perform a deep soak until water runs out the bottom, then allow excess to drain.'
+          }
+        ];
+      } else if (diag.category === 'dim') {
+        careTips = [
+          {
+            title: 'Optimize Natural Light',
+            desc: `Current reading (${light.lux} lx) is low. Move plant 3-5 feet closer to an east- or north-facing window for brighter indirect illumination.`
+          },
+          {
+            title: 'Preserve Variegation',
+            desc: 'Money Plants in low light revert to solid dark green to capture minimal photons. Bright light sustains golden marbling.'
+          },
+          {
+            title: 'Dust Foliage',
+            desc: 'Wipe leaves gently with a damp microfiber cloth to maximize light absorption efficiency.'
+          }
+        ];
+      } else {
+        careTips = [
+          {
+            title: 'Ideal Watering Routine',
+            desc: 'Maintain current cadence: water once every 7-10 days when the top 50% of the potting medium feels dry to touch.'
+          },
+          {
+            title: 'Light Balance',
+            desc: `Current light level (${light.lux} lx) is in the optimal growth zone. Continue providing bright, filtered indirect sunlight.`
+          },
+          {
+            title: 'Vine Propagation',
+            desc: 'Healthy nodes are visible along the vine. Stems with 2-3 leaves can easily root in clean water for new cuttings.'
+          }
+        ];
+      }
+
+      this.rxCareList.innerHTML = careTips.map(t => `
         <div class="rx-care-item">
           <div class="rx-care-icon" aria-hidden="true">${getCareIconSvg(t.title)}</div>
           <div class="rx-care-info">

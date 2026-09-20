@@ -11,13 +11,19 @@ export class CameraStream {
     this.stream = null;
     this.isLiveCamera = false;
     this.activeSpecimenImage = null;
+    this.facingMode = 'environment';
   }
 
-  async startCamera() {
+  async startCamera(preferredFacing = null) {
+    if (preferredFacing) {
+      this.facingMode = preferredFacing;
+    }
     try {
+      this.stopCamera();
+
       const constraints = {
         video: {
-          facingMode: { ideal: 'environment' },
+          facingMode: { ideal: this.facingMode },
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         },
@@ -34,6 +40,21 @@ export class CameraStream {
       console.warn('Camera stream could not be started, falling back to botanical specimen mode:', err);
       this.isLiveCamera = false;
       return false;
+    }
+  }
+
+  async flipCamera() {
+    this.facingMode = this.facingMode === 'environment' ? 'user' : 'environment';
+    return await this.startCamera();
+  }
+
+  captureSnapshot() {
+    if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) return null;
+    try {
+      return this.canvas.toDataURL('image/jpeg', 0.88);
+    } catch (e) {
+      console.warn('Snapshot capture failed:', e);
+      return null;
     }
   }
 

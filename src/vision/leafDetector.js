@@ -76,12 +76,12 @@ export class LeafDetector {
       const delta = max - min;
 
       // 1. Reject bright emissive laptop/monitor screens (white/light gray documents or browser)
-      if (r > 155 && g > 155 && b > 155 && delta < 50) {
+      if (r > 190 && g > 190 && b > 190 && delta < 32) {
         continue;
       }
 
       // 2. Reject neutral dark surfaces (laptop chassis, gray keyboards, dark desks)
-      if (max < 34 || delta < 16) {
+      if (max < 26 && delta < 10) {
         continue;
       }
 
@@ -96,21 +96,25 @@ export class LeafDetector {
       }
       if (hue < 0) hue += 360;
 
+      // 3. Reject human skin tones (hue < 38° or > 340° with red prominence)
+      if ((hue < 38 || hue > 340) && r > g && g >= b && (delta / max) > 0.15) {
+        continue;
+      }
+
       const sat = delta / max;
       const egi = 2 * g - r - b;
 
-      // 3. Strict Botanical Foliage Criteria:
-      // Real leaves require genuine chlorophyll absorption:
-      // a) Hue: 58° - 156° (yellow-green variegation through deep emerald)
-      // b) High saturation: sat >= 0.26 (rules out silver/gray laptops, white walls, keyboards)
-      // c) Strong green dominance over blue: g > b * 1.28 (plants strongly absorb blue)
-      // d) Green dominance over red: g >= r * 1.04 and egi >= 16
-      const isFoliage = (hue >= 58 && hue <= 156) &&
-                        (sat >= 0.26) &&
-                        (g >= 40) &&
-                        (g > b * 1.28) &&
-                        (egi >= 16) &&
-                        (g >= r * 1.04);
+      // 4. Calibrated Botanical Foliage Criteria (Webcam & Mobile Indoor Tuned):
+      // Supports Golden Pothos / Money Plant variegation (yellow-gold hues),
+      // indoor auto-white-balance, and real chlorophyll absorption:
+      // a) Hue: 42° - 165° (golden variegation 42°-65° through deep emerald 70°-165°)
+      // b) Saturation: sat >= 0.16 (holds under indoor webcam exposure)
+      // c) Green prominence: g >= 32, g > b * 1.08, and egi >= 6
+      const isFoliage = (hue >= 42 && hue <= 165) &&
+                        (sat >= 0.16) &&
+                        (g >= 32) &&
+                        (g > b * 1.08) &&
+                        (egi >= 6);
 
       if (isFoliage) {
         const pixIdx = (i / 4);
@@ -127,25 +131,25 @@ export class LeafDetector {
         if (py > maxY) maxY = py;
 
         // Relative chlorophyll proxy from green prominence
-        const chloroVal = Math.min(100, Math.max(0, (Math.max(egi, delta) / 120) * 100));
+        const chloroVal = Math.min(100, Math.max(20, Math.round(((egi + delta) / 100) * 100)));
         sumChlorophyll += chloroVal;
 
         let maskVal = 1;
-        // - Chlorosis (yellowing/water stress): Hue 46°-60° with high green/red
-        if (hue >= 46 && hue <= 60 && g > 75) {
+        // - Chlorosis (yellowing/water stress): Hue 42°-56° with high brightness
+        if (hue >= 42 && hue <= 56 && g > 70) {
           chlorosisPixels++;
           maskVal = 2;
         }
-        // - Variegation (golden marbling in Money Plants): Hue 62°-78° with high saturation
-        else if (hue >= 62 && hue <= 78 && sat >= 0.35) {
+        // - Variegation (golden marbling in Money Plants): Hue 57°-76° with moderate-to-high saturation
+        else if (hue >= 57 && hue <= 76 && sat >= 0.24) {
           variegationPixels++;
           maskVal = 4;
         }
         this.leafMask[pixIdx] = maskVal;
       } else {
         const pixIdx = (i / 4);
-        // - Necrosis check on non-green boundary pixels: brown crispy edges
-        if (hue >= 20 && hue <= 44 && sat >= 0.28 && luma < 120 && luma > 30) {
+        // - Necrosis check on boundary pixels: brown crispy leaf edges (dry air/underwatering)
+        if (hue >= 18 && hue <= 40 && sat >= 0.22 && luma < 130 && luma > 24) {
           necrosisPixels++;
           this.leafMask[pixIdx] = 3;
         }
@@ -162,56 +166,45 @@ export class LeafDetector {
       lux: currentLux,
       label: 'Bright Indirect',
       status: 'optimal',
-      tip: 'Ideal sweet spot for Money Plant'
+      tip: 'Ideal lighting for Money Plant'
     };
-    if (currentLux < 200) {
+    if (currentLux < 220) {
       lightStatus = {
         lux: currentLux,
         label: 'Low Light',
         status: 'dim',
-        tip: 'A bit dim for leaves; move closer to window'
+        tip: 'Dim room light; place closer to indirect window light'
       };
     } else if (currentLux > 900) {
       lightStatus = {
         lux: currentLux,
         label: 'Direct Sun',
         status: 'bright',
-        tip: 'Bright direct light; protect tender leaves from scorching'
+        tip: 'Direct sunlight; protect tender leaves from scorching'
       };
     }
 
     // Pre-flight Focus & Sharpness Quality
     const avgSharpness = sharpnessSum / totalPixels;
-    const isSharpFocus = avgSharpness > 11;
+    const isSharpFocus = avgSharpness > 10;
 
     const coverage = greenPixelCount / totalPixels;
     this.foliageCoverage = coverage;
 
-    // Minimum coverage threshold: at least 3.2% of frame
-    let hasEnoughFoliage = greenPixelCount > totalPixels * 0.032;
-
-    // Spatial density check: real plant leaves are cohesive clumps, not scattered screen noise
-    if (hasEnoughFoliage && minX < maxX && minY < maxY) {
-      const boxArea = (maxX - minX + 1) * (maxY - minY + 1);
-      const density = greenPixelCount / boxArea;
-      if (density < 0.16) {
-        hasEnoughFoliage = false;
-      }
-    } else {
-      hasEnoughFoliage = false;
-    }
+    // Minimum coverage threshold: at least 0.8% of frame (detects even single leaves / small vines)
+    const hasEnoughFoliage = greenPixelCount >= Math.round(totalPixels * 0.008);
 
     if (hasEnoughFoliage) {
       this.lostFrames = 0;
       this.detectedFrames++;
-      if (this.detectedFrames >= 2) {
+      if (this.detectedFrames >= 1) {
         this.isPlantDetected = true;
       }
     } else {
       this.detectedFrames = 0;
       this.lostFrames++;
-      // Debounced hysteresis: keep lock for ~35 frames (~1.1 seconds) of brief occlusion
-      if (this.lostFrames >= 35) {
+      // Debounced hysteresis: keep lock for ~30 frames of brief movement
+      if (this.lostFrames >= 30) {
         this.isPlantDetected = false;
       }
     }
@@ -222,13 +215,13 @@ export class LeafDetector {
       const normMinY = minY / sh;
       const normMaxY = maxY / sh;
 
-      const targetX = Math.max(0.06, normMinX - 0.04);
-      const targetY = Math.max(0.06, normMinY - 0.04);
-      const targetW = Math.min(0.88, (normMaxX - normMinX) + 0.08);
-      const targetH = Math.min(0.88, (normMaxY - normMinY) + 0.08);
+      const targetX = Math.max(0.04, normMinX - 0.03);
+      const targetY = Math.max(0.04, normMinY - 0.03);
+      const targetW = Math.min(0.92, (normMaxX - normMinX) + 0.06);
+      const targetH = Math.min(0.92, (normMaxY - normMinY) + 0.06);
 
       // Smooth spatial box interpolation
-      const lerp = 0.2;
+      const lerp = 0.25;
       this.smoothBox.x += (targetX - this.smoothBox.x) * lerp;
       this.smoothBox.y += (targetY - this.smoothBox.y) * lerp;
       this.smoothBox.width += (targetW - this.smoothBox.width) * lerp;
@@ -239,22 +232,50 @@ export class LeafDetector {
         y: (sumY / greenPixelCount) / sh
       };
 
-      const avgChlorophyll = Math.round(sumChlorophyll / greenPixelCount);
+      const avgChlorophyll = Math.min(99, Math.max(50, Math.round(sumChlorophyll / greenPixelCount)));
 
       // Pathology percentages
-      const chlorosisRate = Math.min(25, Math.round((chlorosisPixels / greenPixelCount) * 100));
-      const necrosisRate = Math.min(20, Math.round((necrosisPixels / Math.max(1, greenPixelCount * 0.15)) * 100));
-      const variegationRate = Math.min(45, Math.round((variegationPixels / greenPixelCount) * 100));
+      const chlorosisRate = Math.min(40, Math.round((chlorosisPixels / greenPixelCount) * 100));
+      const necrosisRate = Math.min(30, Math.round((necrosisPixels / Math.max(1, greenPixelCount * 0.12)) * 100));
+      const variegationRate = Math.min(55, Math.round((variegationPixels / greenPixelCount) * 100));
 
       // Dynamic calculated health score based on genuine leaf metrics
-      const computedHealth = Math.min(99, Math.max(65, 95 - (chlorosisRate * 2) - (necrosisRate * 2) + Math.min(4, Math.round(variegationRate * 0.1))));
+      let computedHealth = 96;
+      computedHealth -= Math.round(chlorosisRate * 1.5);
+      computedHealth -= Math.round(necrosisRate * 2.0);
+      if (currentLux < 200) computedHealth -= 5;
+      if (currentLux > 900) computedHealth -= 4;
+      computedHealth = Math.min(99, Math.max(52, computedHealth));
+
+      // Dynamic Diagnostic Clinical Guidance
+      let diagnosisCategory = 'optimal';
+      let diagnosisHeadline = 'Optimal Foliage Vitality';
+      let diagnosisAdvice = 'Vibrant chlorophyll absorption detected. Foliage exhibits healthy cellular vigor and balanced variegation.';
+
+      if (chlorosisRate >= 16) {
+        diagnosisCategory = 'chlorosis';
+        diagnosisHeadline = 'Chlorosis / Leaf Yellowing';
+        diagnosisAdvice = 'Yellowing observed on foliage. Typically caused by soil overwatering or poor pot drainage. Allow the top 2 inches of potting mix to dry between waterings.';
+      } else if (necrosisRate >= 12) {
+        diagnosisCategory = 'necrosis';
+        diagnosisHeadline = 'Marginal Leaf Tip Browning';
+        diagnosisAdvice = 'Dry crispy margins detected. Usually triggered by low indoor ambient humidity or dry air. Mist leaves with water and keep away from AC vents.';
+      } else if (currentLux < 220) {
+        diagnosisCategory = 'dim';
+        diagnosisHeadline = 'Insufficient Light Level';
+        diagnosisAdvice = `Ambient light is low (${currentLux} lx). Money Plants tolerate dim corners, but brighter indirect light will stimulate vibrant golden marbling and faster growth.`;
+      } else if (currentLux > 900) {
+        diagnosisCategory = 'bright';
+        diagnosisHeadline = 'Direct Sunlight Warning';
+        diagnosisAdvice = `Light is intense (${currentLux} lx). Shield your Money Plant from harsh direct midday rays to avoid bleached or scorched leaves.`;
+      }
 
       // Distance guidance
       const boxArea = this.smoothBox.width * this.smoothBox.height;
-      let distanceTip = 'Leaf Focused';
-      if (boxArea < 0.06) {
-        distanceTip = 'Move slightly closer';
-      } else if (boxArea > 0.82) {
+      let distanceTip = 'Money Plant Locked';
+      if (boxArea < 0.05) {
+        distanceTip = 'Bring leaf slightly closer';
+      } else if (boxArea > 0.85) {
         distanceTip = 'Step back slightly';
       }
 
@@ -263,30 +284,30 @@ export class LeafDetector {
       const dynamicPins = [
         {
           id: 'dyn-apex',
-          x: Math.round((b.x + b.width * 0.46) * 100),
-          y: Math.round((b.y + b.height * 0.26) * 100),
-          label: 'Top Leaf',
-          score: Math.min(98, Math.max(88, avgChlorophyll + 24)),
-          color: '#86efac',
-          note: 'Healthy new growth'
+          x: Math.round((b.x + b.width * 0.5) * 100),
+          y: Math.round((b.y + b.height * 0.28) * 100),
+          label: 'Foliage Center',
+          score: computedHealth,
+          color: computedHealth > 80 ? '#86efac' : '#fed7aa',
+          note: `${diagnosisHeadline}`
         },
         {
           id: 'dyn-lateral',
-          x: Math.round((b.x + b.width * 0.72) * 100),
-          y: Math.round((b.y + b.height * 0.54) * 100),
-          label: 'Leaf Pattern',
-          score: Math.min(96, Math.max(85, avgChlorophyll + 20)),
+          x: Math.round((b.x + b.width * 0.76) * 100),
+          y: Math.round((b.y + b.height * 0.58) * 100),
+          label: 'Chlorophyll',
+          score: avgChlorophyll,
           color: '#86efac',
-          note: 'Rich variegation'
+          note: 'Active photosynthesis'
         },
         {
-          id: 'dyn-petiole',
-          x: Math.round((b.x + b.width * 0.28) * 100),
-          y: Math.round((b.y + b.height * 0.72) * 100),
-          label: 'Stem',
-          score: Math.min(94, Math.max(82, avgChlorophyll + 16)),
-          color: '#bae6fd',
-          note: 'Nicely hydrated'
+          id: 'dyn-light',
+          x: Math.round((b.x + b.width * 0.24) * 100),
+          y: Math.round((b.y + b.height * 0.68) * 100),
+          label: 'Ambient Light',
+          score: currentLux,
+          color: '#fef08a',
+          note: `${lightStatus.label} (${currentLux} lx)`
         }
       ];
 
@@ -295,15 +316,18 @@ export class LeafDetector {
         box: { ...this.smoothBox },
         centroid,
         coverage: Math.round(coverage * 100),
-        liveChlorophyll: Math.min(99, Math.max(65, avgChlorophyll + 35)),
+        liveChlorophyll: avgChlorophyll,
         light: lightStatus,
         isSharp: isSharpFocus,
         distanceTip,
-        pathology: {
-          chlorosis: chlorosisRate,
-          necrosis: necrosisRate,
-          variegation: variegationRate,
-          healthScore: computedHealth
+        diagnosis: {
+          category: diagnosisCategory,
+          headline: diagnosisHeadline,
+          advice: diagnosisAdvice,
+          healthScore: computedHealth,
+          chlorosisRate,
+          necrosisRate,
+          variegationRate
         },
         dynamicPins,
         mask: this.leafMask,
@@ -319,12 +343,19 @@ export class LeafDetector {
         liveChlorophyll: 0,
         light: lightStatus,
         isSharp: isSharpFocus,
-        distanceTip: 'Looking for leaves...',
-        pathology: { chlorosis: 0, necrosis: 0, variegation: 0, healthScore: 0 },
+        distanceTip: 'Align Money Plant in Viewfinder',
+        diagnosis: {
+          category: 'searching',
+          headline: 'Searching for Money Plant...',
+          advice: 'Hold your Money Plant leaves within the viewfinder. The computer vision scanner will automatically trace and analyze foliage health.',
+          healthScore: 0,
+          chlorosisRate: 0,
+          necrosisRate: 0,
+          variegationRate: 0
+        },
         dynamicPins: [],
         mask: this.leafMask,
         maskWidth: sw,
-        maskHeight: sh
       };
     }
   }

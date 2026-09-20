@@ -173,80 +173,7 @@ html, body {
   z-index: 4;
 }
 
-/* ==========================================================================
-   Conversational Plant Speech Bubble
-   ========================================================================== */
-.plant-speech-bubble {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  z-index: 20;
-  pointer-events: auto;
-  cursor: pointer;
-  max-width: min(300px, calc(100vw - 32px));
-  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1), top 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-}
 
-.plant-speech-bubble.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, -85%) scale(0.95);
-}
-
-.bubble-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(14, 23, 18, 0.92);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  padding: 7px 16px 7px 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.3);
-}
-
-.bubble-avatar-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  color: var(--mint-primary);
-}
-
-.bubble-text {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #f8fafc;
-  letter-spacing: -0.01em;
-  max-width: 220px;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.bubble-beak {
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 7px;
-  background: rgba(14, 23, 18, 0.92);
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-}
-
-.plant-speech-bubble.pulse-settle {
-  animation: bubbleSettle 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes bubbleSettle {
-  0% { transform: translate(-50%, -92%) scale(0.96); opacity: 0.85; }
-  100% { transform: translate(-50%, -100%) scale(1); opacity: 1; }
-}
 
 /* ==========================================================================
    Spatial Viewfinder Reticle (Mobile Responsive)
@@ -440,72 +367,6 @@ html, body {
   font-feature-settings: "tnum" 1;
 }
 
-/* ==========================================================================
-   Mode Segmented Pill Switcher (Mobile Ergonomics)
-   ========================================================================== */
-.view-mode-bar {
-  position: absolute;
-  top: calc(max(10px, env(safe-area-inset-top, 14px)) + 46px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  width: max-content;
-  max-width: calc(100vw - 28px);
-}
-
-.mode-pill-selector {
-  display: flex;
-  align-items: center;
-  background: rgba(14, 22, 18, 0.72);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  padding: 2px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-
-.mode-pill-btn {
-  min-height: 32px;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
-  letter-spacing: 0.02em;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mode-pill-btn:active {
-  transform: scale(0.96);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .mode-pill-btn:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
-  }
-}
-
-.mode-pill-btn.active {
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.22);
-}
-
-.pill-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 /* ==========================================================================
    Planto Floating Condition Card (Mobile Collapsible)
@@ -613,12 +474,30 @@ html, body {
   opacity: 0.8;
 }
 
+/* Real-Time Live Advice Readout */
+.live-diagnostic-summary {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: opacity 0.2s ease;
+}
+
+#live-diagnostic-text {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
 /* 4 Metric Tiles Grid */
 .condition-metrics-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
   opacity: 1;
   transform-origin: top;
   transform: scaleY(1);
@@ -631,6 +510,7 @@ html, body {
   padding: 10px 14px;
 }
 
+.planto-condition-card.minimized .live-diagnostic-summary,
 .planto-condition-card.minimized .condition-metrics-grid {
   display: none;
   opacity: 0;
@@ -697,12 +577,8 @@ html, body {
   gap: 8px;
 }
 
-/* Specimen Drawer Trigger */
-.specimens-trigger-wrapper {
-  position: relative;
-}
-
-.specimens-toggle-pill {
+/* Camera Flip / Control Pill */
+.camera-control-pill-btn {
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -724,100 +600,13 @@ html, body {
   white-space: nowrap;
 }
 
-.specimens-toggle-pill:active {
+.camera-control-pill-btn:active {
   transform: scale(0.95);
 }
 
-.pill-btn-icon {
+.camera-control-pill-btn svg {
   color: var(--mint-primary);
   flex-shrink: 0;
-}
-
-.specimen-arrow {
-  font-size: 11px;
-  color: var(--text-secondary);
-}
-
-/* Specimen Floating Drawer */
-.specimens-drawer {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 0;
-  background: rgba(15, 23, 19, 0.95);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
-  border-radius: 20px;
-  padding: 8px;
-  width: min(280px, calc(100vw - 28px));
-  max-height: 55dvh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  z-index: 50;
-}
-
-.specimens-drawer.collapsed {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(10px) scale(0.95);
-}
-
-.specimen-chip {
-  min-height: 42px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 12.5px;
-  font-weight: 500;
-  padding: 8px 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
-  width: 100%;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.specimen-chip:active {
-  transform: scale(0.98);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .specimen-chip:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-  }
-}
-
-.specimen-chip.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-}
-
-.specimen-chip.active .chip-dot {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
-}
-
-.chip-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.deck-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 4px 6px;
 }
 
 /* Center Shutter Diagnostic Trigger */
@@ -1012,6 +801,54 @@ html, body {
   margin-bottom: 16px;
 }
 
+/* Prescription Snapshot Preview */
+.prescription-snapshot-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.rx-snapshot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0b140f;
+}
+
+.rx-snapshot-tag {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mint-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Prescription Details */
+.prescription-status-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
 .rx-score-circle {
   width: 52px;
   height: 52px;
@@ -1098,6 +935,40 @@ html, body {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.35;
+}
+
+.rx-modal-actions {
+  margin-top: 20px;
+}
+
+.rx-ai-action-btn {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(22, 163, 74, 0.28) 100%);
+  border: 1px solid rgba(134, 239, 172, 0.4);
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rx-ai-action-btn:active {
+  transform: scale(0.98);
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.32) 0%, rgba(22, 163, 74, 0.45) 100%);
+}
+
+.rx-ai-action-btn svg {
+  color: var(--mint-primary);
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -1407,11 +1278,7 @@ html, body {
   .status-pill-badge {
     padding: 5px 10px;
   }
-  .mode-pill-btn {
-    padding: 5px 10px;
-    font-size: 11px;
-  }
-  .specimens-toggle-pill, .ai-doc-pill-btn {
+  .camera-control-pill-btn, .ai-doc-pill-btn {
     padding: 8px 10px;
     font-size: 11.5px;
   }
@@ -1433,14 +1300,12 @@ html, body {
 
 .card-subheading,
 .rx-desc,
-.bubble-body p,
 .chat-bubble p {
   text-wrap: pretty;
 }
 
 .prescription-body,
-.chat-conversation-scroll,
-.bubble-body {
+.chat-conversation-scroll {
   user-select: text;
   -webkit-user-select: text;
 }
@@ -1468,12 +1333,9 @@ html, body {
 @media (prefers-reduced-transparency: reduce) {
   .planto-condition-card,
   .modal-card,
-  .mode-pill-selector,
-  .specimens-drawer,
-  .specimens-toggle-pill,
+  .camera-control-pill-btn,
   .ai-doc-pill-btn,
   .pin-card-popover,
-  .bubble-content,
   .status-pill-badge {
     background: #0e1713 !important;
     backdrop-filter: none !important;
