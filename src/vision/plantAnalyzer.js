@@ -93,14 +93,25 @@ export class PlantAnalyzer {
       this.segmenter.update(segmentSource, timestampMs);
     }
 
-    // Has the model ever actually delivered? Once it has, a later gap is just
-    // staleness and hasMask() handles it; never having delivered at all means
-    // something is wrong with it on this device.
-    const neverDelivered = this.segmenter.lastIngestAt === 0;
-    this.degraded = this.segmenter.available &&
-      neverDelivered &&
-      this.firstSegmentAttemptAt > 0 &&
-      timestampMs - this.firstSegmentAttemptAt > DEGRADED_AFTER_MS;
+    // How long since the model last delivered anything — measured from the
+    // first attempt if it has never delivered at all.
+    //
+    // This deliberately covers BOTH failure shapes. An earlier version only
+    // handled "never delivered", on the reasoning that a later gap was just
+    // staleness that hasMask() would absorb. But hasMask() returning false
+    // means "no plant", so a model that worked and then wedged left the app
+    // detecting nothing, permanently, with nothing said about it — which is
+    // precisely the "detects at first, then stops" report.
+    const since = this.segmenter.lastIngestAt || this.firstSegmentAttemptAt;
+    const stalledFor = this.firstSegmentAttemptAt > 0 ? timestampMs - since : 0;
+
+    // Recovers on its own: one successful ingest moves `since` forward.
+    this.degraded = this.segmenter.available && stalledFor > DEGRADED_AFTER_MS;
+
+    if (this.degraded) {
+      // Fire and forget — a wedged graph only comes back if it is recreated.
+      this.segmenter.reloadIfStalled(timestampMs);
+    }
 
     // With the model available, it is the sole authority on whether a plant is
     // in frame. Without it (failed to load on an old browser) we fall back to
@@ -164,6 +175,13 @@ export class PlantAnalyzer {
       contour: this.smoothedContour,
       base: this.base,
       degraded: !hasModel,
+      segmenterHealth: {
+        available: this.segmenter.available,
+        stalledForMs: Math.round(stalledFor),
+        droppedCallbacks: this.segmenter.droppedCallbacks,
+        reloads: this.segmenter.reloads,
+        lastCoverage: this.segmenter.coverage,
+      },
       plantMask: this.plantMask,
       plantMaskWidth: this.plantMaskW,
       plantMaskHeight: this.plantMaskH,

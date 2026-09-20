@@ -27,6 +27,25 @@ const POTTED_PLANT_FALLBACK_INDEX = 16;
  */
 const STALE_AFTER_MS = 700;
 
+/**
+ * How long a single segmentation may be outstanding before we assume its
+ * callback is never coming and allow the next one.
+ *
+ * `segmentForVideo` can return normally and then simply never invoke its
+ * callback — a dropped frame, a GPU hiccup, iOS reclaiming the WebGL context.
+ * Without this, `inFlight` latches true, every later update returns early, and
+ * segmentation is dead for the rest of the session. That is the "it detects
+ * for a moment and then stops" failure.
+ */
+const INFLIGHT_TIMEOUT_MS = 900;
+
+/**
+ * A stall this long means the graph itself is wedged, not merely slow. Closing
+ * and recreating it is the only thing that recovers a lost GPU context.
+ */
+const RELOAD_AFTER_STALL_MS = 9000;
+const MAX_RELOADS = 3;
+
 function assetUrl(relativePath) {
   return new URL(relativePath, document.baseURI).href;
 }
@@ -60,6 +79,11 @@ export class PlantSegmenter {
     /** When a mask was last genuinely produced, for staleness checks. */
     this.lastIngestAt = 0;
     this.consecutiveFailures = 0;
+    /** When the outstanding request started, for the watchdog. */
+    this.inFlightSince = 0;
+    this.droppedCallbacks = 0;
+    this.reloads = 0;
+    this.reloading = false;
   }
 
   async load() {
@@ -110,12 +134,23 @@ export class PlantSegmenter {
    * lands. `timestampMs` must increase monotonically or MediaPipe rejects it.
    */
   update(source, timestampMs) {
-    if (!this.available || this.inFlight) return;
+    if (!this.available || this.reloading) return;
+
+    if (this.inFlight) {
+      // Watchdog: release a request whose callback never arrived, rather than
+      // blocking every future frame behind it.
+      if (timestampMs - this.inFlightSince < INFLIGHT_TIMEOUT_MS) return;
+      this.inFlight = false;
+      this.droppedCallbacks++;
+      console.warn('[PlantSegmenter] segmentation callback never arrived; releasing slot');
+    }
+
     if (timestampMs - this.lastRunAt < TARGET_INTERVAL_MS) return;
     if (!source || !source.width || !source.height) return;
 
     this.lastRunAt = timestampMs;
     this.inFlight = true;
+    this.inFlightSince = timestampMs;
     this.timestamp += 34;
 
     try {
@@ -165,6 +200,43 @@ export class PlantSegmenter {
     }
 
     this.coverage = hits / categories.length;
+  }
+
+  /**
+   * Recreate the graph after a hard stall. Recoverable failures are handled by
+   * the watchdog; this is for a graph that has genuinely died, where no amount
+   * of resubmitting frames will help.
+   */
+  async reloadIfStalled(timestampMs) {
+    if (this.reloading || !this.available) return false;
+    if (this.reloads >= MAX_RELOADS) return false;
+    if (!this.lastIngestAt) return false;
+    if (timestampMs - this.lastIngestAt < RELOAD_AFTER_STALL_MS) return false;
+
+    this.reloading = true;
+    this.reloads++;
+    console.warn(`[PlantSegmenter] stalled for ${Math.round(timestampMs - this.lastIngestAt)}ms; recreating (attempt ${this.reloads})`);
+
+    try {
+      this.segmenter?.close();
+    } catch (_) {
+      /* already gone */
+    }
+
+    this.segmenter = null;
+    this.available = false;
+    this.mask = null;
+    this.coverage = 0;
+    this.inFlight = false;
+    this.timestamp = 0;
+    this.loading = false;
+
+    const ok = await this.load();
+    // Give the fresh graph a full grace period before the stall check bites
+    // again, otherwise it would be torn down before it can produce anything.
+    this.lastIngestAt = ok ? timestampMs : 0;
+    this.reloading = false;
+    return ok;
   }
 
   /**
