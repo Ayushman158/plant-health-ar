@@ -5,314 +5,220 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Money Plant Doc">
+  <meta name="apple-mobile-web-app-title" content="Money Plant">
   <meta name="format-detection" content="telephone=no">
-  <meta name="theme-color" content="#070c0a">
+  <meta name="theme-color" content="#070907">
 
-  <title>Money Plant — Botanical Health & Care</title>
-  <meta name="description" content="Intelligent camera-based botanical health scanner for Money Plants (Epipremnum aureum) with real-time AR contour tracking and diagnosis.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386efac' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z'/%3E%3Cpath d='M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12'/%3E%3C/svg%3E">
 
-  <!-- Typography: Outfit (Clean iOS Botanical Display & UI) -->
+  <title>Money Plant — Botanical Health Scanner</title>
+  <meta name="description" content="Point your camera at a money plant to see its health mapped onto the plant itself.">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <script type="module" crossorigin src="./assets/index-BASgh098.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DWN3JLsQ.css">
+  <script type="module" crossorigin src="./assets/index-CSki7Q13.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CtsDIr72.css">
 </head>
 <body>
 
-  <main id="app-viewport">
-    <!-- Camera & Visual Layer -->
-    <div id="media-layer" aria-hidden="true">
-      <video id="camera-video" playsinline muted autoplay></video>
-      <canvas id="display-canvas"></canvas>
-      <!-- Real-time Luminous Organic Contour & Central AR Marker Canvas -->
-      <canvas id="tracer-canvas"></canvas>
-      <canvas id="spectral-canvas"></canvas>
-      <div class="viewport-ambient-vignette"></div>
+<main id="stage">
+
+  <!-- Camera -->
+  <div id="media-layer" aria-hidden="true">
+    <video id="camera-video" playsinline muted autoplay></video>
+    <canvas id="display-canvas"></canvas>
+    <canvas id="ar-canvas"></canvas>
+    <div id="stage-vignette"></div>
+  </div>
+
+  <!-- Spatial leaf markers, anchored to the plant -->
+  <div id="marker-layer" aria-label="Leaf markers on the detected plant"></div>
+
+  <div id="ui-root">
+
+    <!-- Top: identity + state -->
+    <header id="top-bar">
+      <div class="identity">
+        <span class="identity-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+          </svg>
+        </span>
+        <span class="identity-text">
+          <span class="identity-name" id="identity-name">Money Plant</span>
+          <span class="identity-species" id="identity-species">Epipremnum aureum</span>
+        </span>
+      </div>
+
+      <div class="top-right">
+        <button type="button" id="btn-structure" class="chip chip-toggle" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22V8"></path><path d="M12 12 7 7"></path><path d="m12 14 5-5"></path><circle cx="12" cy="5" r="2"></circle>
+          </svg>
+          <span>Structure</span>
+        </button>
+        <div id="status-chip" class="chip chip-status" data-status="idle" role="status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="status-text">Searching</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Centre guidance, only while there is nothing to show -->
+    <div id="guidance" class="is-visible">
+      <div class="guidance-frame" aria-hidden="true"></div>
+      <h2 class="guidance-title" id="guidance-title">Find a plant</h2>
+      <p class="guidance-body" id="guidance-body">Point your camera at a plant to start scanning.</p>
     </div>
 
-    <!-- Minimal 4 Corner Brackets around Detection Area -->
-    <div id="spatial-scan-frame" class="idle" aria-hidden="true">
-      <div class="scan-corner tl"></div>
-      <div class="scan-corner tr"></div>
-      <div class="scan-corner bl"></div>
-      <div class="scan-corner br"></div>
-    </div>
+    <!-- Result card -->
+    <section id="result-card-wrap" aria-live="polite">
+      <button type="button" id="result-card" class="result-card" aria-label="Open full diagnosis">
+        <span class="result-copy">
+          <span class="result-title" id="result-title">Looks healthy</span>
+          <span class="result-desc" id="result-desc">Your money plant looks vibrant with no major issues detected.</span>
+        </span>
+        <span class="result-score">
+          <span class="result-score-value" id="result-score">93%</span>
+          <span class="result-score-label">AI vitality<br>estimate</span>
+        </span>
+      </button>
+    </section>
 
-    <!-- Interactive Spatial Leaf Annotations Layer -->
-    <div id="spatial-pins-layer" aria-label="Detected Leaf Foliage Annotations"></div>
+    <!-- Primary controls -->
+    <footer id="bottom-bar">
+      <input type="file" id="gallery-input" accept="image/*" hidden>
 
-    <!-- UI Overlay Root -->
-    <div id="spatial-ui-root">
-      <!-- Top Bar: Botanical Name & Single Health Badge -->
-      <header class="app-top-bar" role="banner">
-        <div class="brand-group">
-          <div class="brand-icon-wrap" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
-              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
-            </svg>
-          </div>
-          <div class="brand-text">
-            <h1 class="brand-title">Money Plant</h1>
-            <span class="brand-subtitle">Epipremnum aureum</span>
-          </div>
+      <button type="button" id="btn-gallery" class="secondary-action">
+        <span class="secondary-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="5"></rect>
+            <circle cx="8.8" cy="8.8" r="1.4"></circle>
+            <path d="m21 15-4.5-4.5L5 21"></path>
+          </svg>
+        </span>
+        <span class="secondary-label">Gallery</span>
+      </button>
+
+      <button type="button" id="btn-scan" class="primary-action" aria-label="Scan plant">
+        <span class="shutter-ring" aria-hidden="true"></span>
+        <span class="shutter-core" aria-hidden="true"></span>
+      </button>
+
+      <button type="button" id="btn-tips" class="secondary-action">
+        <span class="secondary-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9.5"></circle>
+            <path d="M12 16.5v-5"></path><path d="M12 8h.01"></path>
+          </svg>
+        </span>
+        <span class="secondary-label">Tips</span>
+      </button>
+    </footer>
+  </div>
+
+  <!-- Diagnosis sheet -->
+  <div id="diagnosis-sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="diagnosis-title">
+    <div class="sheet-scrim" data-close></div>
+    <div class="sheet-panel">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+
+      <header class="sheet-head">
+        <div>
+          <h2 class="sheet-title" id="diagnosis-title">Plant Health</h2>
+          <span class="sheet-chip" id="diagnosis-status"><span class="status-dot"></span>Healthy</span>
         </div>
-
-        <div class="top-actions">
-          <div id="spatial-status-pill" class="status-pill-badge" role="status">
-            <span class="status-dot"></span>
-            <span class="status-label" id="scanner-status-text">Healthy</span>
-          </div>
-        </div>
+        <button type="button" class="sheet-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
       </header>
 
-      <!-- Primary Floating Result Card (Near Bottom) -->
-      <section id="condition-card-anchor" class="condition-card-anchor" aria-label="Plant Health Result">
-        <div id="condition-card" class="planto-result-card" role="button" tabindex="0" aria-label="View plant diagnosis and care details">
-          <!-- Leaf Thumbnail Preview -->
-          <div class="result-thumb-wrap">
-            <img id="result-card-thumb" alt="Money Plant scan" class="result-card-thumb-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%23121b15'/%3E%3Cpath d='M60 22 C76 34 88 50 84 74 C81 90 68 100 60 100 C52 100 39 90 36 74 C32 50 44 34 60 22 Z' fill='%234ade80' opacity='0.75'/%3E%3Cpath d='M60 34 L60 92' stroke='%23121b15' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+      <div class="sheet-body">
+        <figure class="capture-frame" id="capture-frame" hidden>
+          <img id="capture-image" alt="Captured frame of the scanned plant">
+        </figure>
+
+        <dl class="metric-grid">
+          <div class="metric">
+            <dt>Vitality</dt>
+            <dd id="metric-vitality" class="metric-accent">93%</dd>
+            <p class="metric-note">AI vitality estimate</p>
           </div>
-
-          <!-- Result Headlines -->
-          <div class="result-info-wrap">
-            <h2 class="result-title" id="result-card-title">Looks healthy!</h2>
-            <p class="result-desc" id="result-card-desc">Your money plant looks vibrant with no major issues detected.</p>
+          <div class="metric">
+            <dt>Foliage</dt>
+            <dd id="metric-foliage">Healthy</dd>
+            <p class="metric-note">From leaf colour</p>
           </div>
-
-          <!-- Circular Vitality Progress Ring -->
-          <div class="result-vitality-wrap" aria-label="AI Vitality Estimate">
-            <div class="vitality-ring-container">
-              <svg class="vitality-svg" viewBox="0 0 64 64">
-                <circle class="vitality-bg-circle" cx="32" cy="32" r="26"></circle>
-                <circle class="vitality-progress-circle" id="vitality-progress-circle" cx="32" cy="32" r="26"></circle>
-              </svg>
-              <div class="vitality-text-center">
-                <span class="vitality-pct" id="result-vitality-pct">93%</span>
-                <span class="vitality-label">Vitality</span>
-              </div>
-            </div>
+          <div class="metric">
+            <dt>Light</dt>
+            <dd id="metric-light">Bright indirect</dd>
+            <p class="metric-note">Estimated from the frame</p>
           </div>
-        </div>
-      </section>
-
-      <!-- Bottom Bar: Gallery | Scan Plant | Tips -->
-      <footer class="app-bottom-bar" role="contentinfo">
-        <input type="file" id="gallery-file-input" accept="image/*" style="display:none" aria-label="Upload photo from library">
-
-        <button id="btn-gallery" type="button" class="bottom-action-btn" aria-label="Choose photo from gallery">
-          <div class="action-btn-circle">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect width="18" height="18" x="3" y="3" rx="4" ry="4"></rect>
-              <circle cx="8.5" cy="8.5" r="1.5"></circle>
-              <path d="m21 15-5-5L5 21"></path>
-            </svg>
+          <div class="metric">
+            <dt>Concerns</dt>
+            <dd id="metric-concerns">None detected</dd>
+            <p class="metric-note">Visible signs only</p>
           </div>
-          <span class="action-btn-label">Gallery</span>
-        </button>
+        </dl>
 
-        <button id="btn-scan-plant" type="button" class="bottom-scan-btn" aria-label="Scan Plant">
-          <div class="scan-btn-outer-ring" aria-hidden="true"></div>
-          <div class="scan-btn-core" aria-hidden="true"></div>
-          <span class="scan-btn-label">Scan Plant</span>
-        </button>
+        <section class="sheet-section">
+          <h3 class="sheet-section-title">Care tips</h3>
+          <ul class="tip-list" id="care-tips">
+            <li><span class="tip-marker"></span><span id="tip-water">Water when the top 2–3 cm of soil becomes dry.</span></li>
+            <li><span class="tip-marker"></span><span id="tip-light">Keep in bright, indirect light.</span></li>
+          </ul>
+        </section>
 
-        <button id="btn-tips" type="button" class="bottom-action-btn" aria-label="View plant care tips">
-          <div class="action-btn-circle">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-          </div>
-          <span class="action-btn-label">Tips</span>
-        </button>
-      </footer>
-    </div>
-
-    <!-- Diagnosis & Plant Health Bottom Sheet -->
-    <div id="prescription-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="rx-header-title">
-      <div class="modal-card botanical-sheet">
-        <div class="modal-drag-handle" aria-hidden="true"></div>
-        <div class="modal-header">
-          <div class="sheet-title-group">
-            <h2 class="sheet-main-title" id="rx-header-title">Plant Health</h2>
-            <span class="sheet-status-pill" id="sheet-status-pill">● Healthy</span>
-          </div>
-          <button type="button" id="close-prescription-btn" class="modal-close-btn" aria-label="Close diagnosis">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-
-        <div class="diagnosis-body">
-          <!-- Captured Scan Photo (if snapshot taken) -->
-          <div class="prescription-snapshot-wrap" id="rx-snapshot-wrap">
-            <img id="rx-snapshot-img" alt="Captured Money Plant Leaf Scan" class="rx-snapshot-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%230b140f'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2386efac' font-family='sans-serif' font-size='13'%3EReady for live plant capture%3C/text%3E%3C/svg%3E">
-            <div class="rx-snapshot-tag" id="rx-snapshot-meta">Live Camera Scan Captured</div>
-          </div>
-
-          <!-- Clean 4 Key Health Indicators -->
-          <div class="diagnosis-grid">
-            <div class="diagnosis-tile">
-              <span class="diag-tile-label">Vitality</span>
-              <span class="diag-tile-val mint-accent" id="diag-val-vitality">93%</span>
-            </div>
-            <div class="diagnosis-tile">
-              <span class="diag-tile-label">Foliage</span>
-              <span class="diag-tile-val" id="diag-val-foliage">Healthy</span>
-            </div>
-            <div class="diagnosis-tile">
-              <span class="diag-tile-label">Hydration</span>
-              <span class="diag-tile-val" id="diag-val-hydration">Good</span>
-            </div>
-            <div class="diagnosis-tile">
-              <span class="diag-tile-label">Potential concerns</span>
-              <span class="diag-tile-val" id="diag-val-concerns">None detected</span>
-            </div>
-          </div>
-
-          <!-- Care Tips Section -->
-          <div class="care-tips-section">
-            <h3 class="section-title">Care tips</h3>
-            <ul class="care-tips-list" id="care-tips-list">
-              <li class="care-tip-bullet">
-                <span class="tip-dot"></span>
-                <span class="tip-text" id="tip-watering-text">Water when the top 2–3 cm of soil becomes dry.</span>
-              </li>
-              <li class="care-tip-bullet">
-                <span class="tip-dot"></span>
-                <span class="tip-text" id="tip-light-text">Keep in bright, indirect light.</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- In-Depth Observations & Consult Doctor -->
-          <div class="sheet-footer-area">
-            <p class="diag-scientific-note" id="rx-description">
-              AI analysis based on chlorophyll absorption, ambient illumination, and foliage cellular reflectance.
-            </p>
-            <button type="button" id="rx-consult-ai-btn" class="sheet-ai-action-btn">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"></path>
-              </svg>
-              <span>Ask Plant Doctor</span>
-            </button>
-          </div>
-        </div>
+        <p class="disclosure" id="diagnosis-disclosure"></p>
       </div>
     </div>
+  </div>
 
-    <!-- Botanical Care Tips Bottom Sheet -->
-    <div id="tips-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="tips-modal-title">
-      <div class="modal-card botanical-sheet">
-        <div class="modal-drag-handle" aria-hidden="true"></div>
-        <div class="modal-header">
-          <div class="sheet-title-group">
-            <h2 class="sheet-main-title" id="tips-modal-title">Money Plant Care Guide</h2>
-            <span class="sheet-species-tag">Epipremnum aureum</span>
-          </div>
-          <button type="button" id="close-tips-btn" class="modal-close-btn" aria-label="Close care tips">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+  <!-- Care guide sheet -->
+  <div id="tips-sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="tips-title">
+    <div class="sheet-scrim" data-close></div>
+    <div class="sheet-panel">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+
+      <header class="sheet-head">
+        <div>
+          <h2 class="sheet-title" id="tips-title">Care Guide</h2>
+          <span class="sheet-subtitle">Epipremnum aureum</span>
         </div>
+        <button type="button" class="sheet-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+      </header>
 
-        <div class="tips-body">
-          <div class="tip-card">
-            <div class="tip-card-header">
-              <span class="tip-card-icon" aria-hidden="true">💧</span>
-              <h3 class="tip-card-title">Watering Schedule</h3>
-            </div>
-            <p class="tip-card-desc">Water only when the top 2–3 cm of soil feels completely dry. Money Plants prefer underwatering over waterlogging. Reduce frequency during cooler seasons.</p>
-          </div>
-
-          <div class="tip-card">
-            <div class="tip-card-header">
-              <span class="tip-card-icon" aria-hidden="true">☀️</span>
-              <h3 class="tip-card-title">Sunlight & Exposure</h3>
-            </div>
-            <p class="tip-card-desc">Thrives in bright, indirect light. Tolerates lower-light indoor corners, though gentle indirect sun promotes richer golden marbling and faster growth.</p>
-          </div>
-
-          <div class="tip-card">
-            <div class="tip-card-header">
-              <span class="tip-card-icon" aria-hidden="true">💨</span>
-              <h3 class="tip-card-title">Humidity & Environment</h3>
-            </div>
-            <p class="tip-card-desc">Flourishes in typical home humidity (40–60%). If leaf edges become dry and crisp, mist the leaves weekly with room-temperature water.</p>
-          </div>
-
-          <div class="tip-card">
-            <div class="tip-card-header">
-              <span class="tip-card-icon" aria-hidden="true">🌱</span>
-              <h3 class="tip-card-title">Propagation</h3>
-            </div>
-            <p class="tip-card-desc">Cut a healthy vine 1 cm below a leaf node and place it in clean water or moist potting mix. Strong root systems typically emerge within 10–14 days.</p>
-          </div>
-        </div>
+      <div class="sheet-body">
+        <article class="guide-entry">
+          <h3>Watering</h3>
+          <p>Water only when the top 2–3 cm of soil feels dry. Money plants tolerate a little drought far better than waterlogging. Ease off in cooler months.</p>
+        </article>
+        <article class="guide-entry">
+          <h3>Light</h3>
+          <p>Bright, indirect light. It survives dim corners, but gentle indirect sun brings out richer golden marbling and faster growth.</p>
+        </article>
+        <article class="guide-entry">
+          <h3>Humidity</h3>
+          <p>Ordinary indoor humidity (40–60%) is fine. If leaf edges turn dry and crisp, move it away from vents and mist weekly.</p>
+        </article>
+        <article class="guide-entry">
+          <h3>Propagation</h3>
+          <p>Cut a vine 1 cm below a leaf node and stand it in clean water or moist mix. Roots usually appear within 10–14 days.</p>
+        </article>
       </div>
     </div>
+  </div>
 
-    <!-- AI Plant Doctor Interactive Consultation Modal (Gemma-Powered) -->
-    <div id="ai-doc-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ai-doc-title">
-      <div class="modal-card botanical-sheet ai-chat-modal">
-        <div class="modal-drag-handle" aria-hidden="true"></div>
-        <div class="modal-header">
-          <div class="sheet-title-group">
-            <h2 class="sheet-main-title" id="ai-doc-title">Plant Doctor AI</h2>
-            <span class="sheet-species-tag">Gemma Intelligence</span>
-          </div>
-          <button type="button" id="close-ai-doc-btn" class="modal-close-btn" aria-label="Close chat">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-
-        <div class="chat-conversation-scroll" id="ai-chat-messages" role="log" aria-live="polite">
-          <div class="chat-bubble doc-msg">
-            <div class="doc-avatar-wrap" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
-                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
-              </svg>
-            </div>
-            <div class="bubble-body">
-              <p>Hello! I am your <strong>Plant Doctor</strong>. I have analyzed your Money Plant's vitality, chlorophyll reflectance, and ambient lighting. What questions do you have about caring for it?</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Question Prompts -->
-        <div class="chat-quick-prompts" id="ai-quick-prompts" aria-label="Quick questions">
-          <button type="button" class="quick-chip" data-query="How often should I water my Money Plant?">Watering frequency</button>
-          <button type="button" class="quick-chip" data-query="Why are the leaves turning yellow?">Yellow leaves causes</button>
-          <button type="button" class="quick-chip" data-query="How much indirect sunlight does it need?">Sunlight requirements</button>
-          <button type="button" class="quick-chip" data-query="How do I make the leaves grow bigger?">Leaf size & growth</button>
-        </div>
-
-        <!-- Input Box -->
-        <form id="ai-chat-form" class="chat-input-bar">
-          <input type="text" id="ai-user-input" name="plant_doctor_query" aria-label="Ask Plant Doctor" placeholder="Ask about watering, light, yellow leaves…" autocomplete="off" spellcheck="false">
-          <button type="submit" id="ai-send-btn" class="chat-send-btn" aria-label="Send query">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </form>
-      </div>
-    </div>
-  </main>
+</main>
 
 </body>
 </html>
