@@ -1,245 +1,247 @@
 import './index.css';
+
 import { CameraStream } from './vision/cameraStream.js';
-import { LeafDetector } from './vision/leafDetector.js';
-import { LeafTracer } from './vision/leafTracer.js';
-import { PinManager } from './spatial/pinManager.js';
-import { ConditionCard } from './ui/conditionCard.js';
-import { AiDocModal } from './ui/aiDocModal.js';
+import { PlantAnalyzer } from './vision/plantAnalyzer.js';
+import { ArOverlay } from './ui/arOverlay.js';
+import { LeafMarkers } from './ui/leafMarkers.js';
+import { Diagnosis } from './ui/diagnosis.js';
+import { Sheet } from './ui/sheet.js';
+import { coverTransform } from './ui/viewportMap.js';
 
-class MoneyPlantDocApp {
+/** Vision runs at ~30 Hz; the overlay still draws every frame. */
+const ANALYSIS_INTERVAL_MS = 33;
+/** How long "Plant detected" shows before the guidance layer clears. */
+const DETECTED_HOLD_MS = 900;
+/** Frames the structure skeleton is reused before recomputing. */
+const STRUCTURE_INTERVAL_MS = 240;
+
+class App {
   constructor() {
-    this.videoEl = document.getElementById('camera-video');
+    this.stage = document.getElementById('stage');
+    this.video = document.getElementById('camera-video');
     this.displayCanvas = document.getElementById('display-canvas');
-    this.tracerCanvas = document.getElementById('tracer-canvas');
-    this.scanFrameEl = document.getElementById('spatial-scan-frame');
-    this.statusPillEl = document.getElementById('spatial-status-pill');
-    this.statusTextEl = document.getElementById('scanner-status-text');
-    this.pinsContainer = document.getElementById('spatial-pins-layer');
 
-    // Action Controls
-    this.scanPlantBtn = document.getElementById('btn-scan-plant');
-    this.galleryBtn = document.getElementById('btn-gallery');
-    this.galleryFileInput = document.getElementById('gallery-file-input');
-    this.tipsBtn = document.getElementById('btn-tips');
-    this.tipsModal = document.getElementById('tips-modal');
-    this.closeTipsBtn = document.getElementById('close-tips-btn');
+    this.analyzer = new PlantAnalyzer();
+    this.camera = new CameraStream(this.video, this.displayCanvas);
+    this.overlay = new ArOverlay(document.getElementById('ar-canvas'));
 
-    this.isDetected = false;
-    this.latestAnalysis = null;
+    this.markers = new LeafMarkers(document.getElementById('marker-layer'));
 
-    // Vision Engines
-    this.cameraStream = new CameraStream(this.videoEl, this.displayCanvas);
-    this.leafDetector = new LeafDetector();
-    this.leafTracer = new LeafTracer(this.tracerCanvas);
-
-    // Spatial Leaf Annotations
-    this.pinManager = new PinManager(this.pinsContainer, (pin) => {
-      this.onLeafPinSelected(pin);
-    });
-    this.pinManager.setSourceCanvas(this.displayCanvas);
-
-    // Primary Result Card & Diagnosis Sheet
-    this.conditionCard = new ConditionCard(
-      document.getElementById('condition-card-anchor'),
-      document.getElementById('prescription-modal')
-    );
-
-    // AI Doctor Consultation Modal (Gemma)
-    this.aiDocModal = new AiDocModal(
-      document.getElementById('ai-doc-modal'),
-      null // opened via diagnosis sheet button
-    );
-
-    // Wire up "Ask Plant Doctor" button inside diagnosis sheet
-    this.conditionCard.setAiConsultCallback((analysis) => {
-      this.aiDocModal.open();
+    this.diagnosis = new Diagnosis({
+      cardWrap: document.getElementById('result-card-wrap'),
+      card: document.getElementById('result-card'),
+      sheetRoot: document.getElementById('diagnosis-sheet'),
     });
 
-    this.initControls();
-    this.init();
+    this.tipsSheet = new Sheet(document.getElementById('tips-sheet'));
+
+    this.guidance = document.getElementById('guidance');
+    this.guidanceTitle = document.getElementById('guidance-title');
+    this.guidanceBody = document.getElementById('guidance-body');
+    this.statusChip = document.getElementById('status-chip');
+    this.statusText = document.getElementById('status-text');
+    this.scanButton = document.getElementById('btn-scan');
+    this.structureButton = document.getElementById('btn-structure');
+
+    /** 'searching' | 'detected' | 'tracking' */
+    this.phase = 'searching';
+    this.detectedAt = 0;
+    this.lastAnalysisAt = 0;
+    this.lastStructureAt = 0;
+    this.latest = null;
+
+    this.bindControls();
+    this.start();
   }
 
-  initControls() {
-    // 1. Scan Plant Primary Action Button
-    if (this.scanPlantBtn) {
-      this.scanPlantBtn.addEventListener('click', () => {
-        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+  bindControls() {
+    this.scanButton.addEventListener('click', () => this.capture());
 
-        // Capture high-resolution live snapshot from camera canvas
-        const snapshot = this.cameraStream.captureSnapshot();
+    document.getElementById('btn-tips').addEventListener('click', () => {
+      if (navigator.vibrate) navigator.vibrate(12);
+      this.tipsSheet.open();
+    });
 
-        // Update result card thumbnail
-        const thumbImg = document.getElementById('result-card-thumb');
-        if (thumbImg && snapshot) {
-          thumbImg.src = snapshot;
-        }
+    const galleryInput = document.getElementById('gallery-input');
+    document.getElementById('btn-gallery').addEventListener('click', () => galleryInput.click());
 
-        // Open Apple-style Diagnosis Bottom Sheet
-        this.conditionCard.openPrescription(this.latestAnalysis, snapshot);
-      });
+    galleryInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        await this.camera.loadSpecimen(event.target.result);
+        // A still image has no motion, so previously tracked anchors are
+        // meaningless against it.
+        this.analyzer.reset();
+        this.markers.clear();
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+
+    this.structureButton.addEventListener('click', () => {
+      const enabled = this.structureButton.getAttribute('aria-pressed') !== 'true';
+      this.structureButton.setAttribute('aria-pressed', String(enabled));
+      this.overlay.setStructureMode(enabled);
+      if (navigator.vibrate) navigator.vibrate(12);
+    });
+
+    // Drop the flow history when the camera has been paused — the next frame
+    // is unrelated to the last one, and tracking across that gap is nonsense.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.analyzer.reset();
+    });
+  }
+
+  async start() {
+    this.loop();
+
+    const ok = await this.camera.startCamera();
+    if (!ok) {
+      this.setGuidance('Camera unavailable', 'Allow camera access, or choose a photo from your gallery.');
     }
 
-    // 2. Gallery Button & File Upload
-    if (this.galleryBtn && this.galleryFileInput) {
-      this.galleryBtn.addEventListener('click', () => {
-        if (navigator.vibrate) navigator.vibrate(15);
-        this.galleryFileInput.click();
-      });
+    // Segmentation loads after the camera so the viewfinder is live first; the
+    // colour pass carries detection until the model is ready.
+    await this.analyzer.loadSegmenter();
+  }
 
-      this.galleryFileInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
+  capture() {
+    if (navigator.vibrate) navigator.vibrate([24, 40, 24]);
 
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const dataUrl = event.target.result;
-          await this.cameraStream.loadSpecimen(dataUrl);
+    this.stage.classList.add('is-capturing');
+    setTimeout(() => this.stage.classList.remove('is-capturing'), 320);
 
-          const thumbImg = document.getElementById('result-card-thumb');
-          if (thumbImg) {
-            thumbImg.src = dataUrl;
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-    }
+    this.diagnosis.openSheet(this.camera.captureSnapshot());
+  }
 
-    // 3. Tips Button & Bottom Sheet
-    if (this.tipsBtn && this.tipsModal) {
-      this.tipsBtn.addEventListener('click', () => {
-        if (navigator.vibrate) navigator.vibrate(15);
-        this.tipsModal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-      });
-    }
+  setPhase(phase) {
+    if (this.phase === phase) return;
+    this.phase = phase;
 
-    if (this.closeTipsBtn && this.tipsModal) {
-      this.closeTipsBtn.addEventListener('click', () => {
-        this.tipsModal.classList.add('hidden');
-        document.body.style.overflow = '';
-      });
-
-      this.tipsModal.addEventListener('click', (e) => {
-        if (e.target === this.tipsModal) {
-          this.tipsModal.classList.add('hidden');
-          document.body.style.overflow = '';
-        }
-      });
+    if (phase === 'detected') {
+      this.detectedAt = performance.now();
+      this.setGuidance('Plant detected', 'Hold steady while the scan settles.');
+      this.guidance.classList.add('is-visible');
+      if (navigator.vibrate) navigator.vibrate(18);
+    } else if (phase === 'searching') {
+      this.setGuidance('Find a plant', 'Point your camera at a plant to start scanning.');
+      this.guidance.classList.add('is-visible');
+      this.markers.clear();
     }
   }
 
-  async init() {
-    // Start computer vision rendering loop
-    this.startLoop();
+  setGuidance(title, body) {
+    if (this.guidanceTitle.textContent !== title) this.guidanceTitle.textContent = title;
+    if (this.guidanceBody.textContent !== body) this.guidanceBody.textContent = body;
+  }
 
-    // Request and start camera
-    const cameraAvailable = await this.cameraStream.startCamera();
-    if (!cameraAvailable) {
-      // Graceful fallback to high-res specimen image if browser restricts camera
-      await this.cameraStream.loadSpecimen('https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=1000&q=85');
+  setStatus(status, label) {
+    if (this.statusChip.dataset.status !== status) this.statusChip.dataset.status = status;
+    if (this.statusText.textContent !== label) this.statusText.textContent = label;
+  }
+
+  loop = () => {
+    const now = performance.now();
+    const hasFrame = this.camera.renderFrame();
+
+    if (hasFrame && now - this.lastAnalysisAt >= ANALYSIS_INTERVAL_MS) {
+      this.lastAnalysisAt = now;
+      // Segment the video element directly when live (MediaPipe can decode it
+      // without a readback), and the composited canvas otherwise, so gallery
+      // photos get real segmentation rather than silently falling back.
+      this.latest = this.analyzer.analyze(
+        this.displayCanvas,
+        this.camera.isLiveCamera ? this.video : this.displayCanvas,
+        now,
+      );
+      this.applyAnalysis(this.latest, now);
     }
+
+    if (this.latest) {
+      this.overlay.render(this.latest, this.displayCanvas, now);
+      this.positionMarkers();
+    }
+
+    requestAnimationFrame(this.loop);
+  };
+
+  applyAnalysis(analysis, now) {
+    if (!analysis) return;
+
+    if (!analysis.detected) {
+      this.setPhase('searching');
+      this.setStatus('idle', 'Searching');
+      this.diagnosis.update(analysis);
+      this.markers.update([], this.transform());
+      return;
+    }
+
+    if (this.phase === 'searching') this.setPhase('detected');
+
+    if (this.phase === 'detected' && now - this.detectedAt > DETECTED_HOLD_MS) {
+      this.phase = 'tracking';
+      this.guidance.classList.remove('is-visible');
+    }
+
+    const status = statusFor(analysis.diagnosis);
+    this.overlay.setStatus(status);
+    this.setStatus(status, statusLabel(status));
+
+    if (this.overlay.structureMode && now - this.lastStructureAt > STRUCTURE_INTERVAL_MS) {
+      this.lastStructureAt = now;
+      const seg = this.analyzer.segmenter;
+      if (seg.hasMask()) this.overlay.updateStructure(seg.mask, seg.width, seg.height);
+    }
+
+    this.diagnosis.update(analysis);
+    this.scanButton.dataset.armed = 'true';
   }
 
-  onLeafPinSelected(pin) {
-    if (!pin) return;
-    if (navigator.vibrate) navigator.vibrate(15);
+  transform() {
+    return coverTransform(
+      this.displayCanvas.width,
+      this.displayCanvas.height,
+      window.innerWidth,
+      window.innerHeight,
+    );
   }
 
-  startLoop() {
-    let lastCvTime = 0;
+  positionMarkers() {
+    if (!this.latest?.detected || this.phase === 'searching') {
+      this.markers.update([], this.transform());
+      return;
+    }
 
-    const render = (time) => {
-      // 1. Render Video Frame from Camera
-      const hasFrame = this.cameraStream.renderFrame();
+    const transform = this.transform();
+    this.markers.update(this.latest.leaves || [], transform);
 
-      // 2. Real-Time Computer Vision Detection (~30 fps)
-      if (hasFrame && time - lastCvTime > 30) {
-        lastCvTime = time;
-        this.latestAnalysis = this.leafDetector.analyze(this.displayCanvas);
-        const analysis = this.latestAnalysis;
-
-        if (analysis && analysis.detected) {
-          const b = analysis.box;
-          const diag = analysis.diagnosis || {};
-
-          // Transition to DETECTED state
-          if (!this.isDetected) {
-            this.isDetected = true;
-            this.scanFrameEl.classList.remove('idle');
-            this.scanFrameEl.classList.add('locked');
-            if (this.statusPillEl) {
-              this.statusPillEl.className = 'status-pill-badge optimal';
-            }
-          }
-
-          if (this.statusTextEl) {
-            if (diag.healthScore >= 80) {
-              this.statusTextEl.textContent = 'Healthy';
-              if (this.statusPillEl) this.statusPillEl.className = 'status-pill-badge optimal';
-            } else if (diag.healthScore >= 65) {
-              this.statusTextEl.textContent = 'Moderate';
-              if (this.statusPillEl) this.statusPillEl.className = 'status-pill-badge warning';
-            } else {
-              this.statusTextEl.textContent = 'Attention';
-              if (this.statusPillEl) this.statusPillEl.className = 'status-pill-badge alert';
-            }
-          }
-
-          // Dynamic contour tracer color
-          const tracerColor = diag.healthScore >= 80 ? '#86efac' : (diag.healthScore >= 65 ? '#fed7aa' : '#fca5a5');
-          this.leafTracer.setColor(tracerColor, diag.category);
-
-          // Update primary result card
-          this.conditionCard.updateLiveTelemetry(analysis);
-
-          // Position minimal 4 corner brackets smoothly
-          this.scanFrameEl.style.left = `${b.x * 100}%`;
-          this.scanFrameEl.style.top = `${b.y * 100}%`;
-          this.scanFrameEl.style.width = `${b.width * 100}%`;
-          this.scanFrameEl.style.height = `${b.height * 100}%`;
-
-          // Spatial leaf annotations
-          if (analysis.dynamicPins && analysis.dynamicPins.length > 0) {
-            this.pinManager.setPins(analysis.dynamicPins);
-          }
-        } else {
-          // Transition to IDLE searching state
-          if (this.isDetected) {
-            this.isDetected = false;
-            this.scanFrameEl.classList.remove('locked');
-            this.scanFrameEl.classList.add('idle');
-            if (this.statusPillEl) {
-              this.statusPillEl.className = 'status-pill-badge searching';
-            }
-            if (this.statusTextEl) {
-              this.statusTextEl.textContent = 'Scanning...';
-            }
-
-            this.scanFrameEl.style.left = '';
-            this.scanFrameEl.style.top = '';
-            this.scanFrameEl.style.width = '';
-            this.scanFrameEl.style.height = '';
-
-            this.pinManager.setPins([]);
-          }
-
-          if (analysis) {
-            this.conditionCard.updateLiveTelemetry(analysis);
-          }
-        }
-      }
-
-      // 3. Render Smooth Glowing AR Outline, Central Marker & Keypoints
-      this.leafTracer.render(this.latestAnalysis, this.displayCanvas);
-
-      requestAnimationFrame(render);
-    };
-
-    requestAnimationFrame(render);
+    // Flip a marker's card inboard when it would otherwise run off the right
+    // edge. Done here rather than in CSS because it depends on live position.
+    for (const [, entry] of this.markers.elements) {
+      const x = entry.root.getBoundingClientRect().left;
+      entry.root.classList.toggle('flip-left', x > window.innerWidth * 0.55);
+    }
   }
 }
 
-// Bootstrap application on DOM load
+function statusFor(diag = {}) {
+  if (diag.category === 'necrosis') return 'concern';
+  if (diag.category === 'chlorosis') return 'watch';
+  if (diag.healthScore >= 85) return 'healthy';
+  if (diag.healthScore >= 70) return 'watch';
+  return 'concern';
+}
+
+function statusLabel(status) {
+  return { healthy: 'Healthy', watch: 'Watch', concern: 'Attention' }[status] || 'Searching';
+}
+
 window.addEventListener('DOMContentLoaded', () => {
-  new MoneyPlantDocApp();
+  const app = new App();
+  // Debug handle: harmless in production and invaluable when diagnosing the
+  // vision pipeline on a real device, where there is no other way to look in.
+  window.__plantApp = app;
 });

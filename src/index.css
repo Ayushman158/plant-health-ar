@@ -1,116 +1,76 @@
 /* ==========================================================================
-   MONEY PLANT — Modern Botanical Care & Diagnostic System
-   iOS Camera × Modern Plant-Care App × Lightweight AR Aesthetic
+   Money Plant — camera-first botanical scanner
+   Dark translucent glass, mint accent, generous negative space. The plant is
+   the subject; chrome stays at the edges of the frame.
    ========================================================================== */
 
 :root {
-  /* Botanical Palette */
-  --mint-primary: #86efac;
-  --mint-vibrant: #4ade80;
-  --emerald-rich: #22c55e;
-  --emerald-deep: #15803d;
-  
-  --amber-warning: #fed7aa;
-  --coral-alert: #fca5a5;
-  --ice-water: #bae6fd;
-  --sun-butter: #fef08a;
+  /* Accent — one green, used sparingly. */
+  --mint: #86efac;
+  --mint-bright: #a7f3c4;
+  --amber: #fdd89a;
+  --coral: #fca5a5;
 
-  /* Frosted Glass & Surface Tokens */
-  --bg-obsidian: #070c0a;
-  --glass-surface-bg: rgba(17, 23, 19, 0.86);
-  --glass-card-border: rgba(255, 255, 255, 0.12);
-  --glass-card-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  --glass-blur: blur(28px) saturate(180%);
+  /* Surfaces */
+  --ink: #070907;
+  --glass: rgba(16, 20, 17, 0.72);
+  --glass-strong: rgba(13, 17, 14, 0.9);
+  --hairline: rgba(255, 255, 255, 0.1);
+  --hairline-soft: rgba(255, 255, 255, 0.06);
 
-  /* Contrast-Tuned Typography Tokens */
-  --text-primary: #ffffff;
-  --text-secondary: rgba(226, 248, 235, 0.76);
-  --text-muted: rgba(203, 213, 225, 0.65);
+  /* Type */
+  --text: #f4f8f4;
+  --text-dim: rgba(238, 246, 239, 0.62);
+  --text-faint: rgba(238, 246, 239, 0.4);
+  --font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Typography */
-  --font-brand: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --blur: blur(20px) saturate(150%);
+  --radius: 22px;
+  --radius-sm: 14px;
+
+  /* iOS safe areas, with a floor so desktop still breathes. */
+  --safe-top: max(env(safe-area-inset-top), 12px);
+  --safe-bottom: max(env(safe-area-inset-bottom), 14px);
+  --safe-left: max(env(safe-area-inset-left), 16px);
+  --safe-right: max(env(safe-area-inset-right), 16px);
+
+  --ease: cubic-bezier(0.32, 0.72, 0.28, 1);
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-::selection {
-  background: rgba(134, 239, 172, 0.3);
-  color: #ffffff;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-}
-
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-}
-
-*:focus-visible {
-  outline: 2px solid var(--mint-primary);
-  outline-offset: 3px;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  width: 100%;
   height: 100%;
-  height: 100dvh;
   overflow: hidden;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-  background-color: var(--bg-obsidian);
-  font-family: var(--font-ui);
-  color: var(--text-primary);
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  touch-action: manipulation;
 }
 
-/* ==========================================================================
-   Main Viewport & Media Layers
-   ========================================================================== */
-#app-viewport {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; border-radius: 8px; }
+
+/* --------------------------------------------------------------------------
+   Stage
+   -------------------------------------------------------------------------- */
+
+#stage {
+  position: fixed;
+  inset: 0;
+  /* Follows the visual viewport on iOS as the toolbars grow and collapse. */
   height: 100dvh;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
-#media-layer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: #000;
-  z-index: 1;
-}
+#media-layer, #marker-layer, #ui-root { position: absolute; inset: 0; }
 
-#camera-video {
-  display: none;
-}
+#camera-video { display: none; }
 
-#display-canvas {
+#display-canvas, #ar-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -118,1010 +78,572 @@ html, body {
   object-fit: cover;
 }
 
-/* AR Contour & Central Marker Canvas */
-#tracer-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 2;
-}
+#ar-canvas { pointer-events: none; }
 
-#spectral-canvas {
-  display: none;
-}
-
-.viewport-ambient-vignette {
+#stage-vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(circle at center, transparent 40%, rgba(7, 12, 10, 0.65) 100%);
-  z-index: 3;
+  background:
+    linear-gradient(to bottom, rgba(4, 7, 5, 0.6) 0%, transparent 22%, transparent 55%, rgba(4, 7, 5, 0.75) 100%);
 }
 
-/* ==========================================================================
-   Minimal Corner Brackets (Apple Camera Viewfinder Reticle)
-   ========================================================================== */
-#spatial-scan-frame {
+/* UI root must not swallow taps meant for the markers underneath. */
+#ui-root { pointer-events: none; }
+#ui-root > * { pointer-events: auto; }
+
+/* --------------------------------------------------------------------------
+   Top bar
+   -------------------------------------------------------------------------- */
+
+#top-bar {
   position: absolute;
-  pointer-events: none;
-  border-radius: 20px;
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 10;
-}
-
-#spatial-scan-frame.idle {
-  top: 45%;
-  left: 50%;
-  width: min(78vw, 300px);
-  height: min(45vh, 340px);
-  transform: translate(-50%, -50%);
-  opacity: 0.75;
-}
-
-#spatial-scan-frame.locked {
-  opacity: 1;
-}
-
-.scan-corner {
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  transition: border-color 0.3s ease;
-}
-
-#spatial-scan-frame.locked .scan-corner {
-  border-color: var(--mint-primary);
-}
-
-.scan-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-top-left-radius: 12px; }
-.scan-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-top-right-radius: 12px; }
-.scan-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-bottom-left-radius: 12px; }
-.scan-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-bottom-right-radius: 12px; }
-
-/* ==========================================================================
-   Spatial Leaf Annotations Layer
-   ========================================================================== */
-#spatial-pins-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 12;
-}
-
-.spatial-leaf-pin {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-  cursor: pointer;
-  z-index: 15;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.pin-target {
-  width: 18px;
-  height: 18px;
+  top: var(--safe-top);
+  left: var(--safe-left);
+  right: var(--safe-right);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.pin-core {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--pin-color, var(--mint-primary));
-  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.5);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.pin-pulse {
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1.5px solid var(--pin-color, var(--mint-primary));
-  animation: pinPulse 2.4s infinite cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-}
-
-@keyframes pinPulse {
-  0% { transform: scale(0.8); opacity: 0.85; }
-  70% { transform: scale(2.2); opacity: 0; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-
-.pin-card-popover {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background: rgba(16, 22, 18, 0.94);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
-  border-radius: 12px;
-  padding: 6px 12px;
-  white-space: nowrap;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 30;
-}
-
-.spatial-leaf-pin.active .pin-card-popover {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
-
-.popover-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.popover-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.popover-score {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--pin-color, var(--mint-primary));
-  margin-left: 2px;
-}
-
-.popover-note {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-  font-weight: 400;
-}
-
-/* ==========================================================================
-   UI Root & Navigation Chrome (Mobile Safe Areas)
-   ========================================================================== */
-#spatial-ui-root {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   justify-content: space-between;
-  padding-top: max(14px, env(safe-area-inset-top, 18px));
-  padding-bottom: max(16px, env(safe-area-inset-bottom, 20px));
-  padding-left: max(16px, env(safe-area-inset-left, 18px));
-  padding-right: max(16px, env(safe-area-inset-right, 18px));
-  pointer-events: none;
-  z-index: 25;
-}
-
-#spatial-ui-root > * {
-  pointer-events: auto;
-}
-
-/* ==========================================================================
-   Top Bar (Botanical Identity & Single Status Badge)
-   ========================================================================== */
-.app-top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 4px 2px;
-}
-
-.brand-group {
-  display: flex;
-  align-items: center;
   gap: 12px;
 }
 
-.brand-icon-wrap {
-  width: 42px;
-  height: 42px;
+.identity { display: flex; align-items: center; gap: 9px; min-width: 0; }
+
+.identity-icon {
+  display: grid;
+  place-items: center;
+  width: 32px; height: 32px;
+  flex: none;
   border-radius: 50%;
-  background: rgba(22, 32, 25, 0.75);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--mint-primary);
-  flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  color: var(--mint);
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
 }
 
-.brand-title {
-  font-family: var(--font-brand);
-  font-size: 16.5px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+.identity-text { display: flex; flex-direction: column; min-width: 0; }
+
+.identity-name {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
-.brand-subtitle {
-  font-size: 12px;
-  color: rgba(187, 247, 208, 0.72);
-  font-weight: 400;
-  letter-spacing: -0.01em;
+.identity-species {
+  font-size: 11.5px; font-weight: 400; font-style: italic;
+  color: var(--text-dim); line-height: 1.35;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
 }
 
-.status-pill-badge {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: rgba(16, 24, 19, 0.82);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.top-right { display: flex; align-items: center; gap: 7px; flex: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 11px;
   border-radius: 999px;
-  padding: 6px 14px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  font-size: 11.5px; font-weight: 500; letter-spacing: 0.01em;
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  white-space: nowrap;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+
+.chip-toggle { color: var(--text-dim); }
+.chip-toggle[aria-pressed="true"] {
+  color: #0a1410;
+  background: var(--mint);
+  border-color: transparent;
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--mint-primary);
-  box-shadow: 0 0 0 2px rgba(134, 239, 172, 0.25);
-  flex-shrink: 0;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  flex: none;
 }
 
-.status-pill-badge.searching .status-dot {
-  background: #cbd5e1;
-  box-shadow: none;
+.chip-status[data-status="idle"]     { color: var(--text-faint); }
+.chip-status[data-status="healthy"]  { color: var(--mint); }
+.chip-status[data-status="watch"]    { color: var(--amber); }
+.chip-status[data-status="concern"]  { color: var(--coral); }
+
+.chip-status[data-status="healthy"] .status-dot,
+.chip-status[data-status="watch"] .status-dot,
+.chip-status[data-status="concern"] .status-dot {
+  box-shadow: 0 0 8px currentColor;
 }
 
-.status-pill-badge.warning .status-dot {
-  background: var(--amber-warning);
-  box-shadow: 0 0 0 2px rgba(254, 215, 170, 0.25);
-}
+/* --------------------------------------------------------------------------
+   Centre guidance
+   -------------------------------------------------------------------------- */
 
-.status-pill-badge.alert .status-dot {
-  background: var(--coral-alert);
-  box-shadow: 0 0 0 2px rgba(252, 165, 165, 0.25);
-}
-
-.status-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-}
-
-/* ==========================================================================
-   Primary Floating Result Card (Near Bottom)
-   ========================================================================== */
-.condition-card-anchor {
+#guidance {
   position: absolute;
-  bottom: calc(max(18px, env(safe-area-inset-bottom, 20px)) + 104px);
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 440px;
-  width: calc(100% - 32px);
-  z-index: 20;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(320px, calc(100% - 64px));
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s var(--ease), visibility 0.4s;
 }
 
-.planto-result-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: var(--glass-surface-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
-  border-radius: 26px;
-  padding: 13px 16px;
-  box-shadow: var(--glass-card-shadow);
-  cursor: pointer;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+#guidance.is-visible { opacity: 1; visibility: visible; }
+
+.guidance-frame {
+  width: 92px; height: 92px;
+  margin-bottom: 22px;
+  border-radius: 20px;
+  /* Four corner ticks, drawn with gradients so there is no extra markup. */
+  background:
+    linear-gradient(var(--mint), var(--mint)) 0 0 / 2px 22px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 0 0 / 22px 2px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 100% 0 / 2px 22px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 100% 0 / 22px 2px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 0 100% / 2px 22px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 0 100% / 22px 2px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 100% 100% / 2px 22px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 100% 100% / 22px 2px no-repeat;
+  opacity: 0.5;
+  animation: breathe 3.2s var(--ease) infinite;
 }
 
-.planto-result-card:active {
-  transform: scale(0.985);
-  background: rgba(22, 30, 25, 0.92);
+@keyframes breathe {
+  0%, 100% { opacity: 0.32; transform: scale(1); }
+  50%      { opacity: 0.6;  transform: scale(1.035); }
 }
 
-.result-thumb-wrap {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
-  overflow: hidden;
-  background: #121a14;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  flex-shrink: 0;
+.guidance-title {
+  font-size: 21px; font-weight: 600; letter-spacing: -0.02em;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75);
 }
 
-.result-card-thumb-img {
+.guidance-body {
+  margin-top: 7px;
+  font-size: 13.5px; font-weight: 400; line-height: 1.5;
+  color: var(--text-dim);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.7);
+}
+
+/* --------------------------------------------------------------------------
+   Leaf markers
+   -------------------------------------------------------------------------- */
+
+#marker-layer { pointer-events: none; }
+
+.leaf-marker {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+  /* transform is written per frame by JS; keep it off the transition list so
+     tracking stays 1:1 with the camera instead of lagging behind it. */
+  will-change: transform;
+}
+
+.leaf-marker.is-present { opacity: 1; }
+/* Flow lost this anchor — it is holding its last position, so say so quietly
+   rather than presenting a stale marker as a live one. */
+.leaf-marker.is-drifting { opacity: 0.45; }
+
+.leaf-marker-dot {
+  position: absolute;
+  top: -15px; left: -15px;
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+}
+
+.leaf-marker-ring {
+  position: absolute; inset: 3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--mint);
+  opacity: 0.85;
+  transition: transform 0.25s var(--ease);
+}
+
+.leaf-marker-core {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 10px rgba(134, 239, 172, 0.8);
+}
+
+.leaf-marker[data-status="watch"]   .leaf-marker-ring { border-color: var(--amber); }
+.leaf-marker[data-status="watch"]   .leaf-marker-core { background: var(--amber); box-shadow: 0 0 10px rgba(253, 216, 154, 0.8); }
+.leaf-marker[data-status="concern"] .leaf-marker-ring { border-color: var(--coral); }
+.leaf-marker[data-status="concern"] .leaf-marker-core { background: var(--coral); box-shadow: 0 0 10px rgba(252, 165, 165, 0.8); }
+
+.leaf-marker.is-open .leaf-marker-ring { transform: scale(1.22); }
+
+.leaf-marker-card {
+  position: absolute;
+  left: 22px; top: -14px;
+  width: 196px;
+  padding: 11px 13px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-strong);
+  border: 1px solid var(--hairline);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateX(-6px) scale(0.96);
+  transform-origin: left center;
+  pointer-events: none;
+  transition: opacity 0.22s var(--ease), transform 0.22s var(--ease);
+}
+
+.leaf-marker.is-open .leaf-marker-card {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Flip the card inboard when the marker sits in the right half of the screen. */
+.leaf-marker.flip-left .leaf-marker-card {
+  left: auto; right: 22px;
+  transform-origin: right center;
+}
+
+.leaf-marker-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+
+.leaf-marker-name { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.leaf-marker-status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--mint); }
+.leaf-marker[data-status="watch"]   .leaf-marker-status { color: var(--amber); }
+.leaf-marker[data-status="concern"] .leaf-marker-status { color: var(--coral); }
+.leaf-marker[data-status="unknown"] .leaf-marker-status { color: var(--text-faint); }
+
+.leaf-status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: none; }
+
+.leaf-marker-metrics { margin-top: 9px; display: flex; flex-direction: column; gap: 5px; }
+
+.leaf-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.leaf-metric dt { font-size: 11px; color: var(--text-faint); }
+.leaf-metric dd { font-size: 11.5px; color: var(--text); text-align: right; }
+.leaf-metric-note { padding-top: 5px; border-top: 1px solid var(--hairline-soft); }
+.leaf-metric-note dt, .leaf-metric-note dd { font-size: 10px; color: var(--text-faint); }
+
+/* --------------------------------------------------------------------------
+   Result card
+   -------------------------------------------------------------------------- */
+
+#result-card-wrap {
+  position: absolute;
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: calc(var(--safe-bottom) + 104px);
+}
+
+.result-card {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 15px;
+  text-align: left;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translateY(16px);
+  visibility: hidden;
+  transition: opacity 0.42s var(--ease), transform 0.42s var(--ease), visibility 0.42s;
 }
 
-.result-info-wrap {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+#result-card-wrap.is-visible .result-card {
+  opacity: 1; transform: translateY(0); visibility: visible;
 }
 
-.result-title {
-  font-family: var(--font-brand);
-  font-size: 15.5px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-}
+.result-card:active { transform: translateY(0) scale(0.985); }
+
+.result-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+
+.result-title { font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
 
 .result-desc {
-  font-size: 12px;
-  line-height: 1.35;
-  color: var(--text-secondary);
-  font-weight: 400;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 12.5px; line-height: 1.4; color: var(--text-dim);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-/* Circular Vitality Progress Ring */
-.result-vitality-wrap {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.result-score { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex: none; }
+
+.result-score-value {
+  font-size: 22px; font-weight: 600; letter-spacing: -0.03em;
+  color: var(--mint);
+  font-variant-numeric: tabular-nums;
 }
 
-.vitality-ring-container {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#result-card[data-status="watch"]   .result-score-value { color: var(--amber); }
+#result-card[data-status="concern"] .result-score-value { color: var(--coral); }
+
+.result-score-label {
+  font-size: 9px; line-height: 1.25; text-align: right;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-faint);
 }
 
-.vitality-svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
+/* --------------------------------------------------------------------------
+   Bottom bar
+   -------------------------------------------------------------------------- */
 
-.vitality-bg-circle {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 4;
-}
-
-.vitality-progress-circle {
-  fill: none;
-  stroke: var(--mint-vibrant);
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-dasharray: 163.36;
-  stroke-dashoffset: 11.4; /* ~93% */
-  transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease;
-}
-
-.vitality-text-center {
+#bottom-bar {
   position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
+  left: 0; right: 0;
+  bottom: var(--safe-bottom);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
+  justify-items: center;
+  padding: 0 28px;
 }
 
-.vitality-pct {
-  font-family: var(--font-brand);
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+.secondary-action {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  color: var(--text-dim);
+  transition: color 0.2s var(--ease);
+  /* Comfortable touch target without visually enlarging the control. */
+  padding: 6px 10px;
 }
 
-.vitality-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  letter-spacing: 0.02em;
-}
+.secondary-action:active { color: var(--text); }
 
-/* ==========================================================================
-   Bottom Bar (Gallery | Scan Plant | Tips)
-   ========================================================================== */
-.app-bottom-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 380px;
-  margin: 0 auto;
-  padding: 0 12px 6px 12px;
-}
-
-.bottom-action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.action-btn-circle {
-  width: 50px;
-  height: 50px;
+.secondary-icon {
+  display: grid; place-items: center;
+  width: 42px; height: 42px;
   border-radius: 50%;
-  background: rgba(22, 30, 24, 0.82);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-  transition: transform 0.15s ease, background 0.2s ease;
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  transition: transform 0.18s var(--ease);
 }
 
-.bottom-action-btn:active .action-btn-circle {
-  transform: scale(0.92);
-  background: rgba(30, 42, 33, 0.95);
-}
+.secondary-action:active .secondary-icon { transform: scale(0.93); }
 
-.action-btn-label {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-  letter-spacing: -0.01em;
-}
+.secondary-label { font-size: 10.5px; font-weight: 500; letter-spacing: 0.02em; }
 
-/* Primary Center Shutter Button */
-.bottom-scan-btn {
+.primary-action {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  width: 68px; height: 68px;
+  display: grid; place-items: center;
 }
 
-.scan-btn-outer-ring {
-  position: absolute;
-  top: -4px;
-  width: 78px;
-  height: 78px;
+.shutter-ring {
+  position: absolute; inset: 0;
   border-radius: 50%;
-  border: 2px solid rgba(134, 239, 172, 0.45);
-  animation: scanRingPulse 2.8s infinite ease-in-out;
+  border: 2.5px solid rgba(255, 255, 255, 0.85);
+  transition: transform 0.18s var(--ease);
 }
 
-@keyframes scanRingPulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.06); opacity: 0.85; }
-}
-
-.scan-btn-core {
-  width: 70px;
-  height: 70px;
+.shutter-core {
+  width: 54px; height: 54px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6ee7b7 0%, #22c55e 100%);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.55);
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--mint);
+  transition: transform 0.18s var(--ease), background 0.2s var(--ease);
 }
 
-.bottom-scan-btn:active .scan-btn-core {
-  transform: scale(0.92);
-}
+.primary-action:active .shutter-core { transform: scale(0.88); }
+.primary-action:active .shutter-ring { transform: scale(0.96); }
 
-.scan-btn-label {
-  margin-top: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-}
+.primary-action[data-armed="false"] .shutter-core { background: rgba(255, 255, 255, 0.5); }
 
-/* ==========================================================================
-   Modals: Apple Botanical Bottom Sheets
-   ========================================================================== */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 100;
-  transition: opacity 0.28s ease;
-}
-
-.modal-overlay.hidden {
-  opacity: 0;
+/* Shutter confirmation — a single quick flash, not a particle burst. */
+#stage.is-capturing::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: #fff;
   pointer-events: none;
+  animation: shutter 0.28s var(--ease);
+  z-index: 50;
 }
 
-.modal-card.botanical-sheet {
-  width: 100%;
-  max-width: 500px;
-  background: rgba(16, 23, 18, 0.97);
-  backdrop-filter: blur(36px) saturate(190%);
-  -webkit-backdrop-filter: blur(36px) saturate(190%);
-  border: 1px solid var(--glass-card-border);
-  border-top-left-radius: 32px;
-  border-top-right-radius: 32px;
-  padding: 16px 20px max(28px, env(safe-area-inset-bottom, 24px)) 20px;
-  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.75);
-  max-height: calc(88dvh - env(safe-area-inset-top, 0px));
+@keyframes shutter {
+  0%   { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Sheets
+   -------------------------------------------------------------------------- */
+
+.sheet { position: absolute; inset: 0; z-index: 40; }
+.sheet[hidden] { display: none; }
+
+.sheet-scrim {
+  position: absolute; inset: 0;
+  background: rgba(3, 6, 4, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.32s var(--ease);
+}
+
+.sheet-panel {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  max-height: 86dvh;
+  display: flex; flex-direction: column;
+  padding: 0 var(--safe-left) calc(var(--safe-bottom) + 8px) var(--safe-right);
+  border-radius: 26px 26px 0 0;
+  background: var(--glass-strong);
+  border-top: 1px solid var(--hairline);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  transform: translateY(100%);
+  transition: transform 0.38s var(--ease);
+}
+
+.sheet.is-open .sheet-scrim { opacity: 1; }
+.sheet.is-open .sheet-panel { transform: translateY(0); }
+
+.sheet-grabber {
+  width: 36px; height: 4px;
+  margin: 9px auto 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  flex: none;
+}
+
+.sheet-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 8px 0 14px;
+  flex: none;
+}
+
+.sheet-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+
+.sheet-subtitle { font-size: 12px; font-style: italic; color: var(--text-dim); }
+
+.sheet-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 5px;
+  font-size: 12px; color: var(--mint);
+}
+.sheet-chip[data-status="watch"]   { color: var(--amber); }
+.sheet-chip[data-status="concern"] { color: var(--coral); }
+
+.sheet-close {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; flex: none;
+  border-radius: 50%;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.sheet-body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  transform: translateY(0);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overscroll-behavior: contain;
+  padding-bottom: 6px;
 }
 
-.modal-overlay.hidden .modal-card.botanical-sheet {
-  transform: translateY(100%);
-}
-
-.modal-drag-handle {
-  width: 40px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.22);
-  border-radius: 3px;
-  margin: 0 auto 14px auto;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.capture-frame {
   margin-bottom: 16px;
-}
-
-.sheet-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sheet-main-title {
-  font-family: var(--font-brand);
-  font-size: 19px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: -0.02em;
-}
-
-.sheet-status-pill {
-  font-size: 11.5px;
-  font-weight: 600;
-  background: rgba(134, 239, 172, 0.16);
-  color: var(--mint-primary);
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-.sheet-species-tag {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: rgba(187, 247, 208, 0.75);
-}
-
-.modal-close-btn {
-  width: 36px;
-  height: 36px;
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  border-radius: 50%;
-  color: #ffffff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.modal-close-btn:active {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-/* Snapshot Preview */
-.prescription-snapshot-wrap {
-  position: relative;
-  width: 100%;
-  height: 180px;
-  border-radius: 18px;
+  border-radius: 16px;
   overflow: hidden;
-  margin-bottom: 16px;
+  border: 1px solid var(--hairline-soft);
+  background: rgba(255, 255, 255, 0.03);
+  /* A reference thumbnail, not a hero image — the sheet's job is the reading,
+     and an uncapped 16:10 frame pushed every metric below the fold. */
+  height: clamp(96px, 18dvh, 150px);
 }
 
-.rx-snapshot-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #0b140f;
-}
+#capture-image { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.rx-snapshot-tag {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--mint-primary);
-}
-
-/* Diagnosis 4-Tile Grid */
-.diagnosis-grid {
+.metric-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.diagnosis-tile {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 1px;
   border-radius: 16px;
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  overflow: hidden;
+  background: var(--hairline-soft);
 }
 
-.diag-tile-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.metric {
+  padding: 13px 14px;
+  background: rgba(255, 255, 255, 0.035);
 }
 
-.diag-tile-val {
-  font-size: 15px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.01em;
+.metric dt {
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint);
 }
 
-.diag-tile-val.mint-accent {
-  color: var(--mint-vibrant);
-  font-family: var(--font-brand);
-  font-size: 18px;
-  font-weight: 700;
+.metric dd {
+  margin-top: 5px;
+  font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
 }
 
-/* Care Tips Section */
-.care-tips-section {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
-  padding: 14px 16px;
-  margin-bottom: 18px;
-}
+.metric-accent { color: var(--mint); font-variant-numeric: tabular-nums; }
 
-.section-title {
-  font-family: var(--font-brand);
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
+.metric-note { margin-top: 3px; font-size: 10px; color: var(--text-faint); line-height: 1.35; }
+
+.sheet-section { margin-top: 20px; }
+
+.sheet-section-title {
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-faint);
   margin-bottom: 10px;
 }
 
-.care-tips-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.tip-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+.tip-list li { display: flex; gap: 10px; font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
+
+.tip-marker {
+  width: 5px; height: 5px; margin-top: 7px; flex: none;
+  border-radius: 50%; background: var(--mint); opacity: 0.8;
 }
 
-.care-tip-bullet {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+.disclosure {
+  margin-top: 18px; padding-top: 14px;
+  border-top: 1px solid var(--hairline-soft);
+  font-size: 11px; line-height: 1.55; color: var(--text-faint);
 }
 
-.tip-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--mint-primary);
-  margin-top: 6px;
-  flex-shrink: 0;
+.guide-entry { padding: 14px 0; border-bottom: 1px solid var(--hairline-soft); }
+.guide-entry:last-child { border-bottom: 0; }
+.guide-entry h3 { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+.guide-entry p { font-size: 13px; line-height: 1.55; color: var(--text-dim); }
+
+/* --------------------------------------------------------------------------
+   Responsive & accessibility
+   -------------------------------------------------------------------------- */
+
+/* Short screens: the result card and bar compete for the same space, so tuck
+   the card closer and shrink the shutter rather than letting them overlap. */
+@media (max-height: 680px) {
+  #result-card-wrap { bottom: calc(var(--safe-bottom) + 92px); }
+  .result-desc { -webkit-line-clamp: 1; }
+  .primary-action { width: 60px; height: 60px; }
+  .shutter-core { width: 47px; height: 47px; }
 }
 
-.tip-text {
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--text-secondary);
-}
-
-/* Sheet Footer */
-.sheet-footer-area {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.diag-scientific-note {
-  font-size: 12.5px;
-  color: var(--text-muted);
-  line-height: 1.45;
-}
-
-.sheet-ai-action-btn {
-  width: 100%;
-  min-height: 46px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: linear-gradient(135deg, rgba(74, 222, 128, 0.18) 0%, rgba(22, 163, 74, 0.28) 100%);
-  border: 1px solid rgba(134, 239, 172, 0.35);
-  border-radius: 14px;
-  color: #ffffff;
-  font-size: 13.5px;
-  font-weight: 600;
-  padding: 12px 18px;
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.sheet-ai-action-btn:active {
-  transform: scale(0.98);
-  background: linear-gradient(135deg, rgba(74, 222, 128, 0.28) 0%, rgba(22, 163, 74, 0.4) 100%);
-}
-
-.sheet-ai-action-btn svg {
-  color: var(--mint-primary);
-  flex-shrink: 0;
-}
-
-/* ==========================================================================
-   Tips Modal Sheet
-   ========================================================================== */
-.tips-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.tip-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  padding: 12px 14px;
-}
-
-.tip-card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 5px;
-}
-
-.tip-card-icon {
-  font-size: 16px;
-}
-
-.tip-card-title {
-  font-family: var(--font-brand);
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.tip-card-desc {
-  font-size: 12.5px;
-  line-height: 1.4;
-  color: var(--text-secondary);
-}
-
-/* ==========================================================================
-   AI Doctor Consultation Chat Modal (Preserved)
-   ========================================================================== */
-.ai-chat-modal {
-  max-height: 85dvh;
-}
-
-.chat-conversation-scroll {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 38vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  margin-bottom: 12px;
-}
-
-.chat-bubble {
-  display: flex;
-  gap: 8px;
-  max-width: 90%;
-}
-
-.chat-bubble.user-msg {
-  align-self: flex-end;
-  flex-direction: row-reverse;
-}
-
-.doc-avatar-wrap {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: rgba(134, 239, 172, 0.16);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--mint-primary);
-  flex-shrink: 0;
-}
-
-.bubble-body {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 8px 12px;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #f8fafc;
-}
-
-.user-msg .bubble-body {
-  background: var(--mint-primary);
-  color: #051c0d;
-  font-weight: 500;
-  border: none;
-}
-
-.chat-quick-prompts {
-  display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 6px;
-  margin-bottom: 10px;
-  scrollbar-width: none;
-}
-
-.chat-quick-prompts::-webkit-scrollbar {
-  display: none;
-}
-
-.quick-chip {
-  min-height: 34px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.quick-chip:active {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.chat-input-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  padding: 4px 6px 4px 14px;
-}
-
-.chat-input-bar input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #ffffff;
-  font-size: 16px; /* Prevents auto-zoom on iOS */
-  font-family: var(--font-ui);
-}
-
-.chat-input-bar input::placeholder {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.chat-send-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--mint-primary);
-  border: none;
-  color: #051c0d;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.chat-send-btn:active {
-  transform: scale(0.92);
-}
-
-/* Typing Dots Animation */
-.typing-dots span {
-  animation: dotBlink 1.2s infinite;
-  font-size: 18px;
-  line-height: 8px;
-}
-
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes dotBlink {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 1; }
-}
-
-/* ==========================================================================
-   Responsive & Accessibility Fallbacks
-   ========================================================================== */
-@media (max-width: 360px) {
-  .brand-title { font-size: 15px; }
-  .brand-subtitle { font-size: 11px; }
-  .planto-result-card { padding: 10px 12px; gap: 10px; }
-  .result-thumb-wrap { width: 48px; height: 48px; }
-  .vitality-ring-container { width: 48px; height: 48px; }
-  .vitality-pct { font-size: 12px; }
-  .scan-btn-core { width: 62px; height: 62px; }
-  .scan-btn-outer-ring { width: 70px; height: 70px; }
-  .action-btn-circle { width: 44px; height: 44px; }
+/* Landscape: keep the centre of the frame clear of chrome. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #result-card-wrap {
+    left: auto;
+    right: calc(var(--safe-right) + 96px);
+    bottom: var(--safe-bottom);
+    width: min(340px, 46vw);
+  }
+  #bottom-bar {
+    left: auto; top: 0; bottom: 0;
+    right: var(--safe-right);
+    width: 92px;
+    grid-template-columns: none;
+    grid-auto-rows: 1fr auto 1fr;
+    padding: 12px 0;
+  }
+  .guidance-frame { width: 70px; height: 70px; margin-bottom: 14px; }
+  .sheet-panel { max-height: 94dvh; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1130,17 +652,14 @@ html, body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .scan-btn-outer-ring, .pin-pulse { animation: none !important; opacity: 0.4 !important; }
+  /* Keep the sheet's slide as an instant state change rather than a jump-cut
+     mid-gesture; opacity still carries the change. */
+  .sheet-panel { transition: transform 0.01ms; }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .planto-result-card,
-  .modal-card.botanical-sheet,
-  .action-btn-circle,
-  .status-pill-badge,
-  .brand-icon-wrap {
-    background: #0e1713 !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
+/* Older iOS Safari without backdrop-filter would render these panels as flat,
+   near-transparent boxes over the camera. Fall back to opaque surfaces. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .chip, .identity-icon, .secondary-icon, .result-card, .leaf-marker-card { background: rgba(12, 16, 13, 0.94); }
+  .sheet-panel { background: rgba(10, 13, 11, 0.98); }
 }

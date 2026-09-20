@@ -1,9 +1,21 @@
 /**
- * LeafDetector (Multi-Spectral Botanical Colorimetry & Photometric Engine)
- * Features real-time ambient room Lux metering, multi-spectral leaf pathology
- * (chlorosis yellowing, dry burn necrosis, golden variegation balance),
- * pre-flight focus/distance guidance, and false-positive screen rejection.
+ * LeafDetector — per-pixel colour and photometric analysis.
+ *
+ * This is a genuine measurement of the frame: hue/saturation/excess-green
+ * classification per pixel, ambient light estimated from mean Rec.709 luma, and
+ * a focus proxy from the summed luma gradient. It is *not* object recognition —
+ * it knows "this pixel looks like foliage", not "this is a plant". Object
+ * identity comes from PlantSegmenter; this pass supplies the health signal and
+ * the fallback mask when segmentation is unavailable.
  */
+
+/** Values written into the label mask. */
+export const BACKGROUND = 0;
+export const FOLIAGE = 1;
+export const CHLOROSIS = 2;
+export const NECROSIS = 3;
+export const VARIEGATION = 4;
+
 export class LeafDetector {
   constructor() {
     this.offscreenCanvas = document.createElement('canvas');
@@ -279,38 +291,6 @@ export class LeafDetector {
         distanceTip = 'Step back slightly';
       }
 
-      // Dynamically anchored AR pins on the detected plant
-      const b = this.smoothBox;
-      const dynamicPins = [
-        {
-          id: 'dyn-apex',
-          x: Math.round((b.x + b.width * 0.5) * 100),
-          y: Math.round((b.y + b.height * 0.28) * 100),
-          label: 'Foliage Center',
-          score: computedHealth,
-          color: computedHealth > 80 ? '#86efac' : '#fed7aa',
-          note: `${diagnosisHeadline}`
-        },
-        {
-          id: 'dyn-lateral',
-          x: Math.round((b.x + b.width * 0.76) * 100),
-          y: Math.round((b.y + b.height * 0.58) * 100),
-          label: 'Chlorophyll',
-          score: avgChlorophyll,
-          color: '#86efac',
-          note: 'Active photosynthesis'
-        },
-        {
-          id: 'dyn-light',
-          x: Math.round((b.x + b.width * 0.24) * 100),
-          y: Math.round((b.y + b.height * 0.68) * 100),
-          label: 'Ambient Light',
-          score: currentLux,
-          color: '#fef08a',
-          note: `${lightStatus.label} (${currentLux} lx)`
-        }
-      ];
-
       return {
         detected: true,
         box: { ...this.smoothBox },
@@ -329,7 +309,6 @@ export class LeafDetector {
           necrosisRate,
           variegationRate
         },
-        dynamicPins,
         mask: this.leafMask,
         maskWidth: sw,
         maskHeight: sh
@@ -353,9 +332,9 @@ export class LeafDetector {
           necrosisRate: 0,
           variegationRate: 0
         },
-        dynamicPins: [],
         mask: this.leafMask,
         maskWidth: sw,
+        maskHeight: sh,
       };
     }
   }
