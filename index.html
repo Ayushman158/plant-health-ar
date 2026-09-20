@@ -17,8 +17,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <script type="module" crossorigin src="./assets/index-BYWFdmhX.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CH6Szdcp.css">
+  <script type="module" crossorigin src="./assets/index-gcvvQEiY.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-uOtwL3kc.css">
 </head>
 <body>
 
@@ -31,20 +31,6 @@
       <canvas id="tracer-canvas"></canvas>
       <canvas id="spectral-canvas"></canvas>
       <div class="viewport-ambient-vignette"></div>
-    </div>
-
-    <!-- Conversational Plant Speech Bubble -->
-    <div id="plant-speech-bubble" class="plant-speech-bubble hidden" role="status" aria-live="polite">
-      <div class="bubble-content">
-        <span class="bubble-avatar-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
-            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
-          </svg>
-        </span>
-        <span class="bubble-text">Searching foliage...</span>
-      </div>
-      <div class="bubble-beak"></div>
     </div>
 
     <!-- Spatial Bio-Scanning Viewfinder Reticle -->
@@ -74,30 +60,30 @@
           </div>
           <div class="brand-text">
             <h1 class="brand-title">Money Plant Doc</h1>
-            <span class="brand-subtitle" id="active-specimen-label">Epipremnum aureum</span>
+            <span class="brand-subtitle" id="active-specimen-label">Live Scanner Active</span>
           </div>
         </div>
 
         <div class="top-actions">
-          <div id="spatial-status-pill" class="status-pill-badge optimal" role="status">
+          <div id="spatial-status-pill" class="status-pill-badge" role="status">
             <span class="status-dot"></span>
-            <span class="status-label">96% Healthy</span>
+            <span class="status-label" id="scanner-status-text">Searching...</span>
           </div>
         </div>
       </header>
 
-      <!-- Floating Minimal Condition Card (Planto Style, Mobile Collapsible) -->
-      <section id="condition-card-anchor" class="condition-card-anchor" aria-label="Specimen Telemetry">
-        <div id="condition-card" class="planto-condition-card minimized">
+      <!-- Floating Live Clinical Condition Card (Real-Time Feedback) -->
+      <section id="condition-card-anchor" class="condition-card-anchor" aria-label="Live Plant Diagnosis">
+        <div id="condition-card" class="planto-condition-card">
           <div class="card-top-row">
-            <div class="condition-title-wrap" id="condition-card-header-toggle" role="button" tabindex="0" aria-label="Toggle telemetry cards">
-              <span class="card-heading">Foliage Vitality</span>
-              <span class="card-subheading" id="card-status-sub">Optimal & Thriving</span>
+            <div class="condition-title-wrap" id="condition-card-header-toggle" role="button" tabindex="0" aria-label="Toggle live metrics">
+              <span class="card-heading" id="card-status-title">Searching Foliage...</span>
+              <span class="card-subheading" id="card-status-sub">Hold Money Plant within viewfinder</span>
             </div>
             <div class="card-top-actions">
-              <button type="button" id="toggle-telemetry-btn" class="btn-card-toggle" aria-label="Toggle telemetry metrics" aria-expanded="false">
+              <button type="button" id="toggle-telemetry-btn" class="btn-card-toggle" aria-label="Toggle telemetry metrics" aria-expanded="true">
                 <svg class="fold-icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <polyline points="18 15 12 9 6 15"></polyline>
+                  <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
               <button type="button" id="expand-prescription-btn" class="btn-card-chevron" aria-label="View clinical prescription">
@@ -109,16 +95,23 @@
             </div>
           </div>
 
+          <!-- Live Dynamic Advice Readout from Camera -->
+          <div class="live-diagnostic-summary" id="live-diagnostic-summary">
+            <p id="live-diagnostic-text">Point camera at Money Plant leaves to begin real-time telemetry analysis.</p>
+          </div>
+
+          <!-- 4 Real-Time Metrics Tiles -->
           <div class="condition-metrics-grid">
-            <div class="metric-tile water-tile">
-              <div class="metric-icon-circle water-bg" aria-hidden="true">
+            <div class="metric-tile vigor-tile">
+              <div class="metric-icon-circle vigor-bg" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
                 </svg>
               </div>
               <div class="metric-data">
-                <span class="metric-label">Hydration</span>
-                <span class="metric-value" id="val-water">85%</span>
+                <span class="metric-label">Health Vigor</span>
+                <span class="metric-value" id="val-vigor">--%</span>
               </div>
             </div>
 
@@ -137,61 +130,51 @@
                 </svg>
               </div>
               <div class="metric-data">
-                <span class="metric-label">PAR Solar</span>
-                <span class="metric-value" id="val-light">78%</span>
+                <span class="metric-label">Room Lux</span>
+                <span class="metric-value" id="val-light">-- lx</span>
               </div>
             </div>
 
-            <div class="metric-tile vigor-tile">
-              <div class="metric-icon-circle vigor-bg" aria-hidden="true">
+            <div class="metric-tile water-tile">
+              <div class="metric-icon-circle water-bg" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
-                  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
                 </svg>
               </div>
               <div class="metric-data">
-                <span class="metric-label">Cell Vigor</span>
-                <span class="metric-value" id="val-vigor">93%</span>
+                <span class="metric-label">Chlorophyll</span>
+                <span class="metric-value" id="val-water">--%</span>
               </div>
             </div>
 
             <div class="metric-tile temp-tile">
               <div class="metric-icon-circle temp-bg" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                 </svg>
               </div>
               <div class="metric-data">
-                <span class="metric-label">Ambient</span>
-                <span class="metric-value" id="val-temp">24°C</span>
+                <span class="metric-label">In-Frame</span>
+                <span class="metric-value" id="val-temp">--%</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Mode Segmented Switcher (SCAN | TRACER | RX) -->
-      <nav class="view-mode-bar" aria-label="Vision View Mode">
-        <div id="mode-segmented-control" class="mode-pill-selector" role="tablist"></div>
-      </nav>
-
-      <!-- Bottom Bar: Presets + Shutter Diagnostic + AI Consultation -->
+      <!-- Bottom Bar: Camera Flip + Shutter Diagnostic + AI Consultation -->
       <footer class="app-bottom-bar" role="contentinfo">
-        <div class="specimens-trigger-wrapper">
-          <button id="specimens-toggle-btn" type="button" class="specimens-toggle-pill" aria-label="Toggle plant specimen presets" aria-expanded="false" aria-haspopup="true">
-            <svg class="pill-btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M7 10h10l-1.5 10h-7L7 10Z"></path>
-              <path d="M12 10V5"></path>
-              <path d="M12 5c-2-2-5-1-5 1 0 3 5 4 5 4"></path>
-              <path d="M12 5c2-2 5-1 5 1 0 3-5 4-5 4"></path>
-            </svg>
-            <span class="specimen-btn-label">Specimens</span>
-            <span class="specimen-arrow" aria-hidden="true">▾</span>
-          </button>
-          <div id="specimen-deck-container" class="specimens-drawer collapsed" role="menu"></div>
-        </div>
+        <button id="camera-flip-btn" type="button" class="camera-control-pill-btn" aria-label="Flip or toggle camera">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 10c0-4.42-3.58-8-8-8s-8 3.58-8 8c0 3.58 2.5 6.58 5.86 7.61"></path>
+            <polyline points="15 2 20 2 20 7"></polyline>
+            <path d="M4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-3.58-2.5-6.58-5.86-7.61"></path>
+            <polyline points="9 22 4 22 4 17"></polyline>
+          </svg>
+          <span class="pill-label">Camera</span>
+        </button>
 
-        <button id="main-diagnose-btn" type="button" class="shutter-scanner-btn" aria-label="Run botanical diagnosis">
+        <button id="main-diagnose-btn" type="button" class="shutter-scanner-btn" aria-label="Scan and diagnose Money Plant">
           <div class="shutter-glow-ring" aria-hidden="true"></div>
           <div class="shutter-inner-core">
             <svg class="shutter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -233,18 +216,24 @@
         </div>
 
         <div class="prescription-body">
+          <!-- Captured Scan Snapshot Preview -->
+          <div class="prescription-snapshot-wrap" id="rx-snapshot-wrap">
+            <img id="rx-snapshot-img" alt="Captured Money Plant Leaf Scan" class="rx-snapshot-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%230b140f'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2386efac' font-family='sans-serif' font-size='13'%3EReady for live plant capture%3C/text%3E%3C/svg%3E">
+            <div class="rx-snapshot-tag" id="rx-snapshot-meta">Live Camera Scan Ready</div>
+          </div>
+
           <div class="prescription-status-hero" id="rx-hero">
-            <div class="rx-score-circle" id="rx-score">96%</div>
+            <div class="rx-score-circle" id="rx-score">--%</div>
             <div class="rx-hero-meta">
               <h2 class="rx-plant-name" id="rx-name">Money Plant (Epipremnum aureum)</h2>
-              <span class="rx-diagnosis-label" id="rx-status-tag">Optimal Cellular Vigor</span>
+              <span class="rx-diagnosis-label" id="rx-status-tag">Analyzing...</span>
             </div>
           </div>
 
           <div class="rx-section">
             <h3 class="rx-section-title">Clinical Observations</h3>
             <p class="rx-desc" id="rx-description">
-              Turgid glossy leaf tissue with vibrant chlorophyll pigmentation. No signs of bacterial vascular wilt or acidic manganese toxicity.
+              Aligning leaf tissue to determine chlorophyll absorption, transpiration rate, and cell vigor.
             </p>
           </div>
 
@@ -253,6 +242,15 @@
             <div class="rx-care-list" id="rx-care-list">
               <!-- Dynamically populated -->
             </div>
+          </div>
+
+          <div class="rx-modal-actions">
+            <button type="button" id="rx-consult-ai-btn" class="rx-ai-action-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"></path>
+              </svg>
+              <span>Ask Plant Doctor About This Result</span>
+            </button>
           </div>
         </div>
       </div>
