@@ -35,7 +35,7 @@ export class ConditionCard {
     this.cardEl = cardAnchorEl.querySelector('#condition-card');
     this.toggleBtn = cardAnchorEl.querySelector('#toggle-telemetry-btn');
     this.headerToggle = cardAnchorEl.querySelector('#condition-card-header-toggle');
-    this.isCollapsed = false;
+    this.isCollapsed = true;
 
     this.valWater = cardAnchorEl.querySelector('#val-water');
     this.valLight = cardAnchorEl.querySelector('#val-light');
@@ -67,8 +67,8 @@ export class ConditionCard {
         const icon = this.toggleBtn.querySelector('.fold-icon-svg');
         if (icon) {
           icon.innerHTML = this.isCollapsed
-            ? `<polyline points="6 9 12 15 18 9"></polyline>`
-            : `<polyline points="18 15 12 9 6 15"></polyline>`;
+            ? `<polyline points="18 15 12 9 6 15"></polyline>`
+            : `<polyline points="6 9 12 15 18 9"></polyline>`;
         }
       }
       if (navigator.vibrate) navigator.vibrate(12);

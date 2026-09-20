@@ -1,7 +1,8 @@
 /**
  * PinManager
  * Manages spatial AR leaf marker pins anchored directly to plant foliage.
- * Supports interactive tap-to-inspect Leaf Loupe with localized tissue analysis.
+ * Pins appear as subtle, elegant glowing target anchors that expand a compact
+ * glass popover only when tapped by the user.
  */
 export class PinManager {
   constructor(overlayContainer, onPinSelected) {
@@ -19,9 +20,17 @@ export class PinManager {
   }
 
   initInteraction() {
+    // Tap on canvas background: deselect active pin or create user inspection loupe
     this.container.addEventListener('click', (e) => {
-      // If clicked on an existing pin, ignore container click
-      if (e.target.closest('.spatial-leaf-pin')) return;
+      const pinTarget = e.target.closest('.spatial-leaf-pin');
+      if (pinTarget) return;
+
+      // If a pin was open, tapping outside closes it
+      if (this.activePinId) {
+        this.activePinId = null;
+        this.render();
+        return;
+      }
 
       const rect = this.container.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
@@ -60,7 +69,7 @@ export class PinManager {
         id: 'loupe-pin-' + Date.now(),
         x: Math.round(pctX),
         y: Math.round(pctY),
-        label: 'Tapped Leaf Spot',
+        label: 'Selected Leaf Spot',
         score: localizedScore,
         color: '#86efac',
         note: localizedNote,
@@ -72,7 +81,7 @@ export class PinManager {
       this.addPin(loupePin);
       this.selectPin(loupePin.id);
 
-      if (navigator.vibrate) navigator.vibrate(25);
+      if (navigator.vibrate) navigator.vibrate(20);
     });
   }
 
@@ -103,23 +112,23 @@ export class PinManager {
     this.pins.forEach(pin => {
       const pinEl = document.createElement('div');
       const isLoupe = pin.isUserLoupe;
-      pinEl.className = `spatial-leaf-pin ${this.activePinId === pin.id ? 'active' : ''} ${isLoupe ? 'loupe-pin' : ''}`;
+      const isActive = this.activePinId === pin.id;
+      pinEl.className = `spatial-leaf-pin ${isActive ? 'active' : ''} ${isLoupe ? 'loupe-pin' : ''}`;
       pinEl.style.left = `${pin.x}%`;
       pinEl.style.top = `${pin.y}%`;
 
       pinEl.innerHTML = `
-        <div class="pin-target ${isLoupe ? 'loupe-target' : ''}" style="--pin-color: ${pin.color}">
+        <div class="pin-target" style="--pin-color: ${pin.color || '#86efac'}">
           <div class="pin-pulse"></div>
           <div class="pin-core"></div>
         </div>
-        <div class="pin-leader-line"></div>
-        <div class="pin-card-glass ${isLoupe ? 'loupe-card' : ''}" style="--pin-color: ${pin.color}">
-          <div class="pin-header">
-            <span class="pin-dot" style="background: ${pin.color}"></span>
-            <span class="pin-score">${pin.score}%</span>
+        <div class="pin-card-popover" style="--pin-color: ${pin.color || '#86efac'}">
+          <div class="popover-row">
+            <span class="popover-dot" style="background: ${pin.color || '#86efac'}"></span>
+            <span class="popover-title">${pin.label}</span>
+            <span class="popover-score">${pin.score}%</span>
           </div>
-          <div class="pin-caption">${pin.label}</div>
-          <div class="pin-note">${pin.note || 'Healthy tissue'}</div>
+          ${pin.note ? `<div class="popover-note">${pin.note}</div>` : ''}
         </div>
       `;
 
