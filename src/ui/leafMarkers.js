@@ -14,6 +14,10 @@
 
 import { toScreen } from './viewportMap.js';
 
+/** Matches the region status threshold in leafAnchors.js, so the card's status
+ *  line and its colour row cannot describe the same leaf differently. */
+const YELLOWING_THRESHOLD = 16;
+
 const STATUS_TEXT = {
   healthy: 'Healthy',
   watch: 'Possible yellowing',
@@ -22,9 +26,8 @@ const STATUS_TEXT = {
 };
 
 export class LeafMarkers {
-  constructor(container, { onSelect } = {}) {
+  constructor(container) {
     this.container = container;
-    this.onSelect = onSelect;
     this.elements = new Map();
     this.selectedId = null;
 
@@ -48,7 +51,6 @@ export class LeafMarkers {
     }
 
     if (navigator.vibrate && id) navigator.vibrate(12);
-    this.onSelect?.(id);
   }
 
   /**
@@ -157,7 +159,7 @@ export class LeafMarkers {
 }
 
 function describeColour(health) {
-  if (health.chlorosisRate >= 22) return `Yellowing across ${health.chlorosisRate}%`;
+  if (health.chlorosisRate >= YELLOWING_THRESHOLD) return `Yellowing across ${health.chlorosisRate}%`;
   if (health.variegationRate >= 25) return `Variegated, ${health.variegationRate}% gold`;
   return 'Mostly normal';
 }

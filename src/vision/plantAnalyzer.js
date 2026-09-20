@@ -148,46 +148,6 @@ export class PlantAnalyzer {
     }
   }
 
-  /** Colour readout for an arbitrary point, used by tap-to-inspect. */
-  sampleAt(nx, ny, colour) {
-    if (!colour?.mask) return null;
-
-    const lw = colour.maskWidth;
-    const lh = colour.maskHeight;
-    const cx = Math.round(nx * lw);
-    const cy = Math.round(ny * lh);
-
-    // Average a small neighbourhood — a single pixel at this resolution is
-    // noise, and reporting it as a reading would overstate the precision.
-    const radius = 3;
-    let foliage = 0;
-    let chlorosis = 0;
-    let necrosis = 0;
-    let variegation = 0;
-    let total = 0;
-
-    for (let y = cy - radius; y <= cy + radius; y++) {
-      for (let x = cx - radius; x <= cx + radius; x++) {
-        if (x < 0 || y < 0 || x >= lw || y >= lh) continue;
-        total++;
-        const v = colour.mask[y * lw + x];
-        if (v === FOLIAGE) foliage++;
-        else if (v === CHLOROSIS) { chlorosis++; foliage++; }
-        else if (v === VARIEGATION) { variegation++; foliage++; }
-        else if (v === 3) necrosis++;
-      }
-    }
-
-    if (total === 0 || foliage + necrosis < 6) return null;
-
-    return {
-      foliageShare: Math.round((foliage / total) * 100),
-      chlorosisRate: Math.round((chlorosis / (foliage + necrosis)) * 100),
-      necrosisRate: Math.round((necrosis / (foliage + necrosis)) * 100),
-      variegationRate: Math.round((variegation / (foliage + necrosis)) * 100),
-    };
-  }
-
   reset() {
     this.flow.reset();
     this.anchors.clear();
