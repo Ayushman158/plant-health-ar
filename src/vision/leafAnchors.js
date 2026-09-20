@@ -13,7 +13,7 @@
  */
 
 import { labelComponents } from './maskAnalysis.js';
-import { FOLIAGE, CHLOROSIS, NECROSIS, VARIEGATION } from './leafDetector.js';
+import { healthWithin } from './leafHealth.js';
 
 /** Regions smaller than this share of the plant mask are noise, not leaves. */
 const MIN_REGION_SHARE = 0.018;
@@ -21,22 +21,25 @@ const MIN_REGION_SHARE = 0.018;
 const MAX_ANCHORS = 4;
 /** Normalised distance within which a new region re-uses an existing identity. */
 const MATCH_RADIUS = 0.14;
-/** Frames an unmatched anchor survives on flow alone before being retired. */
-const MAX_MISSES = 18;
+/**
+ * Miss budgets. These are counted in different units and were previously
+ * shared, which is why leaf numbers ran into the hundreds on device: `advance`
+ * runs every frame (~30 Hz) while `reconcile` runs per segmentation result
+ * (~8 Hz), so a shared budget of 18 retired an anchor after 0.6s of imperfect
+ * flow. It would then respawn with a brand new ordinal, over and over.
+ */
+const MAX_FLOW_MISSES = 45;      // ~1.5s of unreliable optical flow
+const MAX_SEGMENT_MISSES = 5;    // ~0.6s of the region genuinely being gone
 /** Consecutive confirmations before an anchor is shown, to avoid flicker. */
 const CONFIRM_FRAMES = 3;
-/**
- * Yellowing share at which a region is flagged. Kept equal to the whole-frame
- * threshold in LeafDetector (16%) so a marker cannot read "Healthy" while the
- * result card reads "Possible yellowing" for the same foliage.
- */
-const CHLOROSIS_THRESHOLD = 0.16;
 
 export class LeafAnchors {
   constructor(flowTracker) {
     this.flow = flowTracker;
     this.anchors = [];
-    this.nextOrdinal = 1;
+    // Bumped whenever the set empties, so a recycled ordinal still yields a
+    // fresh element id and the DOM marker animates in rather than teleporting.
+    this.generation = 0;
   }
 
   /**
@@ -60,11 +63,11 @@ export class LeafAnchors {
         // Flow lost it (textureless patch, motion blur, left frame). Hold the
         // last position but stop claiming it is tracked.
         anchor.tracked = false;
-        anchor.misses++;
+        anchor.flowMisses++;
       }
     }
 
-    this.anchors = this.anchors.filter((a) => a.misses < MAX_MISSES);
+    this.retire();
   }
 
   /**
@@ -80,13 +83,13 @@ export class LeafAnchors {
     }
 
     const minArea = Math.max(20, Math.round(totalPlant * MIN_REGION_SHARE));
-    const { components } = labelComponents(mask, w, h, minArea);
+    const { labels, components } = labelComponents(mask, w, h, minArea);
     const regions = components.slice(0, MAX_ANCHORS);
 
     const claimed = new Set();
 
     for (const region of regions) {
-      const health = sampleRegionHealth(region, stats);
+      const health = sampleRegionHealth(region, stats, { labels, w, h });
       const existing = this.findNearest(region.centroid, claimed);
 
       if (existing) {
@@ -99,34 +102,55 @@ export class LeafAnchors {
         existing.bbox = region.bbox;
         existing.markerScale = markerScaleFor(region.area, totalPlant);
         existing.health = health;
-        existing.misses = 0;
+        existing.segmentMisses = 0;
+        existing.flowMisses = 0;
         existing.confirmations = Math.min(CONFIRM_FRAMES, existing.confirmations + 1);
       } else if (this.anchors.length < MAX_ANCHORS) {
+        const ordinal = this.claimOrdinal();
         const anchor = {
-          id: `leaf-${this.nextOrdinal}`,
-          ordinal: this.nextOrdinal,
+          id: `leaf-${ordinal}-${this.generation}`,
+          ordinal,
           x: region.centroid.x,
           y: region.centroid.y,
           area: region.area,
           bbox: region.bbox,
           markerScale: markerScaleFor(region.area, totalPlant),
           health,
-          misses: 0,
+          segmentMisses: 0,
+          flowMisses: 0,
           confirmations: 1,
           tracked: false,
         };
-        this.nextOrdinal++;
         this.anchors.push(anchor);
         claimed.add(anchor.id);
       }
     }
 
     for (const anchor of this.anchors) {
-      if (!claimed.has(anchor.id)) anchor.misses++;
+      if (!claimed.has(anchor.id)) anchor.segmentMisses++;
     }
 
-    this.anchors = this.anchors.filter((a) => a.misses < MAX_MISSES);
+    this.retire();
     this.anchors.sort((a, b) => a.ordinal - b.ordinal);
+  }
+
+  retire() {
+    this.anchors = this.anchors.filter(
+      (a) => a.flowMisses < MAX_FLOW_MISSES && a.segmentMisses < MAX_SEGMENT_MISSES,
+    );
+  }
+
+  /**
+   * Smallest unused slot in 1..MAX_ANCHORS. Leaf numbers are slot labels, not
+   * a running total of everything ever seen — "Leaf 400" told the user nothing
+   * except that the tracker had churned 400 times.
+   */
+  claimOrdinal() {
+    const taken = new Set(this.anchors.map((a) => a.ordinal));
+    for (let i = 1; i <= MAX_ANCHORS; i++) {
+      if (!taken.has(i)) return i;
+    }
+    return MAX_ANCHORS;
   }
 
   findNearest(centroid, claimed) {
@@ -155,8 +179,36 @@ export class LeafAnchors {
   }
 
   clear() {
+    if (this.anchors.length) this.generation++;
     this.anchors = [];
   }
+}
+
+
+/**
+ * Real per-region colour metrics, counted from pixels that actually belong to
+ * this component rather than merely falling inside its bounding box. Leaves
+ * are not rectangles, so a box around one also contains the gaps around it and
+ * whatever is behind them, which silently diluted every per-leaf figure.
+ */
+function sampleRegionHealth(region, stats, geometry) {
+  return healthWithin(stats, regionTest(region, geometry), region.bbox);
+}
+
+/**
+ * Predicate testing whether a normalised point falls inside this component.
+ * The component lives in plant-mask space, a different resolution from the
+ * colour label mask, so the point is rescaled on each lookup.
+ */
+function regionTest(region, geometry) {
+  if (!geometry?.labels) return () => true;
+
+  const { labels, w, h } = geometry;
+  return (nx, ny) => {
+    const px = Math.min(w - 1, Math.max(0, Math.round(nx * w)));
+    const py = Math.min(h - 1, Math.max(0, Math.round(ny * h)));
+    return labels[py * w + px] === region.id;
+  };
 }
 
 /**
@@ -174,68 +226,4 @@ function countSet(mask) {
   let n = 0;
   for (let i = 0; i < mask.length; i++) n += mask[i] ? 1 : 0;
   return n;
-}
-
-/**
- * Real per-region colour metrics, read from the label mask the colour pass
- * already produced. Every number here is counted from pixels inside this
- * region's bounding box — nothing is assigned by position or invented.
- */
-function sampleRegionHealth(region, stats) {
-  const fallback = { foliage: 0, chlorosis: 0, necrosis: 0, variegation: 0, samples: 0 };
-  if (!stats || !stats.mask) return { ...fallback, status: 'unknown', label: 'Not analysed' };
-
-  const { mask: labels, width: lw, height: lh } = stats;
-  const x0 = Math.max(0, Math.floor(region.bbox.x * lw));
-  const y0 = Math.max(0, Math.floor(region.bbox.y * lh));
-  const x1 = Math.min(lw - 1, Math.ceil((region.bbox.x + region.bbox.width) * lw));
-  const y1 = Math.min(lh - 1, Math.ceil((region.bbox.y + region.bbox.height) * lh));
-
-  let foliage = 0;
-  let chlorosis = 0;
-  let necrosis = 0;
-  let variegation = 0;
-
-  for (let y = y0; y <= y1; y++) {
-    for (let x = x0; x <= x1; x++) {
-      switch (labels[y * lw + x]) {
-        case FOLIAGE: foliage++; break;
-        case CHLOROSIS: chlorosis++; foliage++; break;
-        case NECROSIS: necrosis++; break;
-        case VARIEGATION: variegation++; foliage++; break;
-        default: break;
-      }
-    }
-  }
-
-  const samples = foliage + necrosis;
-  if (samples < 12) {
-    return { ...fallback, status: 'unknown', label: 'Not analysed' };
-  }
-
-  const chlorosisRate = chlorosis / samples;
-  const necrosisRate = necrosis / samples;
-  const variegationRate = variegation / samples;
-
-  let status = 'healthy';
-  let label = 'Healthy';
-
-  if (necrosisRate >= 0.1) {
-    status = 'concern';
-    label = 'Possible edge browning';
-  } else if (chlorosisRate >= CHLOROSIS_THRESHOLD) {
-    status = 'watch';
-    label = 'Possible yellowing';
-  } else if (variegationRate >= 0.25) {
-    label = 'Healthy, variegated';
-  }
-
-  return {
-    status,
-    label,
-    samples,
-    chlorosisRate: Math.round(chlorosisRate * 100),
-    necrosisRate: Math.round(necrosisRate * 100),
-    variegationRate: Math.round(variegationRate * 100),
-  };
 }

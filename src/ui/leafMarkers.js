@@ -26,8 +26,9 @@ const STATUS_TEXT = {
 };
 
 export class LeafMarkers {
-  constructor(container) {
+  constructor(container, { onInspect } = {}) {
     this.container = container;
+    this.onInspect = onInspect;
     this.elements = new Map();
     this.selectedId = null;
 
@@ -38,6 +39,12 @@ export class LeafMarkers {
         return;
       }
       const { id } = marker.dataset;
+
+      if (e.target.closest('.leaf-inspect-btn')) {
+        this.onInspect?.(id);
+        return;
+      }
+
       this.select(this.selectedId === id ? null : id);
     });
   }
@@ -122,6 +129,7 @@ export class LeafMarkers {
           <span class="leaf-marker-status"><span class="leaf-status-dot"></span><span class="leaf-status-text"></span></span>
         </div>
         <dl class="leaf-marker-metrics"></dl>
+        <button type="button" class="leaf-inspect-btn">Trace this leaf</button>
       </div>
     `;
 

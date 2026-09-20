@@ -8,6 +8,8 @@ import { Diagnosis } from './ui/diagnosis.js';
 import { Sheet } from './ui/sheet.js';
 import { coverTransform } from './ui/viewportMap.js';
 import { statusFor, statusChipLabel } from './ui/status.js';
+import { LeafSegmenter } from './vision/leafSegmenter.js';
+import { LeafInspector } from './ui/leafInspector.js';
 
 /** Vision runs at ~30 Hz; the overlay still draws every frame. */
 const ANALYSIS_INTERVAL_MS = 33;
@@ -26,7 +28,16 @@ class App {
     this.camera = new CameraStream(this.video, this.displayCanvas);
     this.overlay = new ArOverlay(document.getElementById('ar-canvas'));
 
-    this.markers = new LeafMarkers(document.getElementById('marker-layer'));
+    this.markers = new LeafMarkers(document.getElementById('marker-layer'), {
+      onInspect: (leafId) => this.inspectLeaf(leafId),
+    });
+
+    this.segmenter = new LeafSegmenter();
+    this.inspector = new LeafInspector({
+      segmenter: this.segmenter,
+      stage: this.stage,
+      onStateChange: (active) => this.onInspectStateChange(active),
+    });
 
     this.diagnosis = new Diagnosis({
       cardWrap: document.getElementById('result-card-wrap'),
@@ -46,6 +57,8 @@ class App {
 
     /** 'searching' | 'detected' | 'tracking' */
     this.phase = 'searching';
+    /** While inspecting, the camera feed is held so the mask and the picture agree. */
+    this.frozen = false;
     this.detectedAt = 0;
     this.lastAnalysisAt = 0;
     this.lastStructureAt = 0;
@@ -144,8 +157,46 @@ class App {
     if (this.statusText.textContent !== label) this.statusText.textContent = label;
   }
 
+  async inspectLeaf(leafId) {
+    const leaf = this.analyzer.anchors.get(leafId);
+    if (!leaf || !this.latest) return;
+
+    if (navigator.vibrate) navigator.vibrate(16);
+
+    // Freeze before anything async: the mask must describe the frame the user
+    // is looking at, not whatever the camera drifts to while the model loads.
+    this.frozen = true;
+
+    await this.inspector.inspect(
+      this.displayCanvas,
+      { mask: this.latest.mask, width: this.latest.maskWidth, height: this.latest.maskHeight },
+      { x: leaf.x, y: leaf.y },
+      `Leaf ${String(leaf.ordinal).padStart(2, '0')}`,
+    );
+
+    this.overlay.setInspectOutline(this.inspector.outline);
+  }
+
+  onInspectStateChange(active) {
+    if (!active) {
+      this.frozen = false;
+      this.overlay.setInspectOutline([]);
+      // The held frame is unrelated to the next live one, so tracking history
+      // across the gap would be meaningless.
+      this.analyzer.reset();
+      this.markers.clear();
+    }
+  }
+
   loop = () => {
     const now = performance.now();
+
+    if (this.frozen) {
+      this.overlay.render(this.latest, this.displayCanvas, now);
+      requestAnimationFrame(this.loop);
+      return;
+    }
+
     const hasFrame = this.camera.renderFrame();
 
     if (hasFrame && now - this.lastAnalysisAt >= ANALYSIS_INTERVAL_MS) {

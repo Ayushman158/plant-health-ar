@@ -13,7 +13,7 @@
  * colour threshold as object recognition.
  */
 
-import { LeafDetector, FOLIAGE, CHLOROSIS, VARIEGATION } from './leafDetector.js';
+import { LeafDetector, FOLIAGE, CHLOROSIS, NECROSIS, VARIEGATION } from './leafDetector.js';
 import { PlantSegmenter } from './plantSegmenter.js';
 import { FlowTracker } from './flowTracker.js';
 import { LeafAnchors } from './leafAnchors.js';
@@ -24,17 +24,17 @@ import { labelComponents, silhouette } from './maskAnalysis.js';
 const CONTOUR_LERP = 0.35;
 
 /**
- * Segmentation is only preferred when it explains at least this share of the
- * foliage the colour pass can see.
+ * Minimum share of the frame DeepLabV3 must label "potted plant" before we
+ * agree a plant is present.
  *
- * DeepLabV3's "potted plant" class was trained on whole plants in context, so
- * on a macro shot of a single leaf it labels only a fraction of the frame —
- * measured at 9% where the colour pass saw 36%. Taking that mask anyway gives a
- * contour that hugs some incidental corner of the image instead of the leaf,
- * which looks like broken tracking. When the two disagree this badly, the
- * colour mask is the better description of what is actually on screen.
+ * Segmentation GATES detection. An earlier version fell back to the colour
+ * mask whenever segmentation found less foliage than colour did, which meant a
+ * confident "this is not a plant" from the model was overridden by "but there
+ * is green in frame" — and a green-capped bottle of hand sanitiser was reported
+ * as a healthy money plant with three leaves. Colour cannot tell foliage from
+ * packaging; only the object model can, so the object model decides.
  */
-const SEGMENTATION_AGREEMENT = 0.45;
+const MIN_PLANT_COVERAGE = 0.012;
 
 export class PlantAnalyzer {
   constructor() {
@@ -77,17 +77,20 @@ export class PlantAnalyzer {
       this.segmenter.update(segmentSource, timestampMs);
     }
 
-    const colourFraction = countFoliage(colour.mask) / colour.mask.length;
-    const useSegmentation = this.segmenter.hasMask() &&
-      this.segmenter.coverage >= colourFraction * SEGMENTATION_AGREEMENT;
+    // With the model available, it is the sole authority on whether a plant is
+    // in frame. Without it (failed to load on an old browser) we fall back to
+    // colour and say so, because some detection beats none — but that mode is
+    // explicitly degraded, not equivalent.
+    const hasModel = this.segmenter.available;
+    this.source = hasModel ? 'segmentation' : 'colour';
 
-    this.source = useSegmentation ? 'segmentation' : 'colour';
+    const detected = hasModel
+      ? this.segmenter.hasMask(timestampMs) && this.segmenter.coverage >= MIN_PLANT_COVERAGE
+      : colour.detected;
 
-    const plantMask = useSegmentation ? this.segmenter.mask : toBinary(colour.mask);
-    const maskW = useSegmentation ? this.segmenter.width : colour.maskWidth;
-    const maskH = useSegmentation ? this.segmenter.height : colour.maskHeight;
-
-    const detected = useSegmentation ? this.segmenter.coverage > 0.012 : colour.detected;
+    const plantMask = hasModel ? this.segmenter.mask : toBinary(colour.mask);
+    const maskW = hasModel ? this.segmenter.width : colour.maskWidth;
+    const maskH = hasModel ? this.segmenter.height : colour.maskHeight;
 
     this.anchors.advance();
 
@@ -100,8 +103,8 @@ export class PlantAnalyzer {
       // Reconcile only when a genuinely new segmentation result landed;
       // otherwise anchors would be re-snapped to the colour blob every frame,
       // which is what made the old markers look attached but behave stuck.
-      const isFreshSegment = useSegmentation && this.segmenter.lastRunAt !== this.lastSegmentAt;
-      if (isFreshSegment || !useSegmentation) {
+      const isFreshSegment = hasModel && this.segmenter.lastRunAt !== this.lastSegmentAt;
+      if (isFreshSegment || !hasModel) {
         this.lastSegmentAt = this.segmenter.lastRunAt;
         this.anchors.reconcile(plantMask, maskW, maskH, {
           mask: colour.mask,
@@ -117,8 +120,14 @@ export class PlantAnalyzer {
       this.anchors.clear();
     }
 
+    // Recount the pathology rates using only pixels inside the plant, so
+    // background yellows and greens cannot drag the score around.
+    const confined = detected && hasModel && plantMask
+      ? confineDiagnosis(colour, plantMask, maskW, maskH)
+      : colour.diagnosis;
+
     const diagnosis = detected
-      ? this.health.update(colour.diagnosis, colour.light?.lux ?? 400, timestampMs)
+      ? this.health.update(confined, colour.light?.lux ?? 400, timestampMs)
       : colour.diagnosis;
 
     return {
@@ -133,7 +142,7 @@ export class PlantAnalyzer {
       plantMaskWidth: this.plantMaskW,
       plantMaskHeight: this.plantMaskH,
       leaves: this.anchors.visible(),
-      plantCoverage: useSegmentation
+      plantCoverage: hasModel
         ? Math.round(this.segmenter.coverage * 100)
         : colour.coverage,
     };
@@ -199,13 +208,48 @@ export class PlantAnalyzer {
   }
 }
 
-function countFoliage(labelMask) {
-  let n = 0;
-  for (let i = 0; i < labelMask.length; i++) {
-    if (labelMask[i] === FOLIAGE || labelMask[i] === CHLOROSIS || labelMask[i] === VARIEGATION) n++;
+/**
+ * Recompute chlorosis/necrosis/variegation counting only pixels that fall
+ * inside the segmented plant. Without this, a yellow packet or a green box
+ * behind the plant is measured as part of its foliage.
+ */
+function confineDiagnosis(colour, plantMask, mw, mh) {
+  const labels = colour.mask;
+  const lw = colour.maskWidth;
+  const lh = colour.maskHeight;
+
+  let foliage = 0;
+  let chlorosis = 0;
+  let necrosis = 0;
+  let variegation = 0;
+
+  for (let y = 0; y < lh; y++) {
+    const my = Math.min(mh - 1, Math.round((y / lh) * mh));
+    for (let x = 0; x < lw; x++) {
+      const mx = Math.min(mw - 1, Math.round((x / lw) * mw));
+      if (!plantMask[my * mw + mx]) continue;
+
+      switch (labels[y * lw + x]) {
+        case FOLIAGE: foliage++; break;
+        case CHLOROSIS: chlorosis++; foliage++; break;
+        case NECROSIS: necrosis++; break;
+        case VARIEGATION: variegation++; foliage++; break;
+        default: break;
+      }
+    }
   }
-  return n;
+
+  const total = foliage + necrosis;
+  if (total < 24) return colour.diagnosis;
+
+  return {
+    ...colour.diagnosis,
+    chlorosisRate: Math.round((chlorosis / total) * 100),
+    necrosisRate: Math.round((necrosis / total) * 100),
+    variegationRate: Math.round((variegation / total) * 100),
+  };
 }
+
 
 function toBinary(labelMask) {
   const out = new Uint8Array(labelMask.length);

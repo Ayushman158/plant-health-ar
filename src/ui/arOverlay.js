@@ -41,6 +41,9 @@ export class ArOverlay {
     this.sceneCtx = this.sceneCanvas.getContext('2d');
     this.maskVersion = null;
 
+    /** Traced outline of a single inspected leaf, normalised. */
+    this.inspectOutline = [];
+
     this.reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     window.matchMedia?.('(prefers-reduced-motion: reduce)')
       .addEventListener?.('change', (e) => { this.reducedMotion = e.matches; });
@@ -48,6 +51,10 @@ export class ArOverlay {
 
   setStatus(status) {
     this.status = status in CONTOUR_COLOR ? status : 'healthy';
+  }
+
+  setInspectOutline(points) {
+    this.inspectOutline = points || [];
   }
 
   setStructureMode(enabled) {
@@ -96,6 +103,13 @@ export class ArOverlay {
     } else {
       const rate = dt / REVEAL_DURATION;
       this.reveal += Math.sign(target - this.reveal) * Math.min(Math.abs(target - this.reveal), rate);
+    }
+
+    // Inspection takes over the overlay entirely: one leaf, traced, with the
+    // rest of the frame dimmed back so the outline is unambiguous.
+    if (this.inspectOutline.length > 6) {
+      this.drawInspect(w, h);
+      return;
     }
 
     if (this.reveal <= 0.001 || !analysis?.contour?.length) return;
@@ -223,6 +237,44 @@ export class ArOverlay {
     ctx.lineWidth = 1.5 * scale;
     ctx.stroke();
 
+    ctx.restore();
+  }
+
+  /** Dim everything outside the traced leaf, then outline it. */
+  drawInspect(w, h) {
+    const ctx = this.ctx;
+    const pts = this.inspectOutline;
+    const scale = Math.min(w, h) / 900;
+
+    const path = new Path2D();
+    const start = midpoint(pts[pts.length - 1], pts[0]);
+    path.moveTo(start.x * w, start.y * h);
+    for (let i = 0; i < pts.length; i++) {
+      const curr = pts[i];
+      const next = pts[(i + 1) % pts.length];
+      const mid = midpoint(curr, next);
+      path.quadraticCurveTo(curr.x * w, curr.y * h, mid.x * w, mid.y * h);
+    }
+    path.closePath();
+
+    ctx.save();
+    // Scrim over the whole frame, with the leaf punched out of it.
+    ctx.fillStyle = 'rgba(4, 8, 5, 0.6)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fill(path);
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(167, 243, 196, 0.98)';
+    ctx.shadowColor = 'rgba(134, 239, 172, 0.9)';
+    ctx.shadowBlur = 16 * scale;
+    ctx.lineWidth = 2.4 * scale;
+    ctx.stroke(path);
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 1.2 * scale;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.stroke(path);
     ctx.restore();
   }
 

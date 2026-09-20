@@ -119,6 +119,23 @@
     </footer>
   </div>
 
+  <!-- Leaf inspection panel (frozen frame + traced outline) -->
+  <div id="inspect-panel" class="inspect-panel" hidden data-phase="loading">
+    <div class="inspect-head">
+      <div class="inspect-heading">
+        <span class="inspect-name" id="inspect-title">Leaf</span>
+        <span class="inspect-status" id="inspect-status">Tracing…</span>
+      </div>
+      <button type="button" id="inspect-close" class="sheet-close" aria-label="Back to live camera">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="inspect-progress" id="inspect-progress" aria-hidden="true"></div>
+    <div class="inspect-content" id="inspect-body"></div>
+  </div>
+
   <!-- Diagnosis sheet -->
   <div id="diagnosis-sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="diagnosis-title">
     <div class="sheet-scrim" data-close></div>

@@ -22,7 +22,18 @@ same Wi-Fi (accept the self-signed certificate warning once).
 npm run build      # → dist/
 ```
 
-Deployed to GitHub Pages from `main` by `.github/workflows/deploy.yml`.
+Deployed to **Vercel** from `main` (`vercel.json` pins the build). The GitHub
+Pages workflow also still publishes `dist/` to the `gh-pages` branch.
+
+`vercel.json` disables Vercel deployments for `gh-pages`: that branch holds only
+built output with no `package.json`, so Vercel's automatic preview build for it
+failed on every Pages deploy. If the failure emails continue, set an Ignored
+Build Step in the dashboard instead:
+
+```bash
+if [ "$VERCEL_GIT_COMMIT_REF" = "gh-pages" ]; then exit 0; else exit 1; fi
+```
+
 `base` is `'./'`, so the bundle works from any subpath.
 
 ---
@@ -59,14 +70,64 @@ world tracking and not 3D anchoring. Specifically:
 Moving to real world tracking would need WebXR hit-test (Android Chrome only) or
 a commercial SLAM SDK. Neither is present.
 
-### Segmentation vs colour
+### Segmentation gates detection
 
-DeepLabV3's "potted plant" class was trained on whole plants in context. On a
-macro shot of a single leaf it labels only a fraction of the frame — measured at
-9% where the colour pass saw 36%. `PlantAnalyzer` therefore prefers segmentation
-only when it explains at least 45% of the foliage the colour pass can see, and
-falls back to the colour mask otherwise. The diagnosis sheet states which one was
-used.
+**Colour never decides whether a plant is present.** If the segmentation model
+loaded, it is the sole authority; colour only measures health *within* the
+region the model found.
+
+This was learned the hard way. An earlier version fell back to the colour mask
+whenever segmentation found less foliage than colour did — which meant a
+confident "this is not a plant" was overridden by "but there is green in frame",
+and a green-capped bottle of hand sanitiser was reported as a healthy money
+plant with three leaves. Colour cannot tell foliage from packaging.
+
+Verified against synthetic non-plants:
+
+| scene | detected | segmentation coverage |
+| --- | --- | --- |
+| green bottle cap + green label | no | 0 |
+| yellow packet | no | 0 |
+| green book + yellow box | no | 0 |
+| monstera photo | yes | 12.4% |
+| pothos photo | yes | 23.3% |
+
+Pathology rates are also recounted using only pixels inside the segmented
+plant, so a yellow packet behind the pot cannot register as leaf yellowing.
+
+If the model fails to load (older browser), the app falls back to colour-only
+detection and the diagnosis sheet says so. That mode is explicitly degraded,
+not equivalent.
+
+A mask older than 700ms is treated as absent rather than reported as live —
+otherwise a rejected frame leaves the previous mask in memory and the app
+confidently describes a scene that has moved on.
+
+### Leaf tracing (SlimSAM)
+
+Tapping a leaf marker and choosing "Trace this leaf" freezes the frame, runs
+SlimSAM once on it, and returns that leaf's actual boundary — not the blob
+outline of a connected component. Metrics are then counted inside the traced
+mask.
+
+Freezing is deliberate: the mask belongs to one frame, so drawing it over a
+moving feed would drift off the leaf it describes.
+
+Two things worth knowing if you touch this:
+
+- `post_process_masks` returns a **Tensor** with dims `[batch, numMasks,
+  height, width]`, not a `RawImage`. It has no `.width`/`.height`.
+- **Do not pick the candidate mask with the highest IoU score.** SAM emits three
+  nested guesses; measured on a monstera the scores ran `[0.65, 0.78, 0.85]`
+  while coverage ran `[18.7%, 0.2%, 0.1%]`, so the best-scored candidate was 774
+  pixels of speckle. Selection filters to a plausible area range first, then
+  takes the best score within it.
+
+The weights (~13 MB) are self-hosted. The onnxruntime WASM is not: onnxruntime
+ships several builds and transformers.js picks between them by browser feature
+detection, so pinning `wasmPaths` overrides that and 404s on whichever variant
+it actually wanted. Everything loads lazily on first use, so a user who never
+traces a leaf never downloads it.
 
 ### What the numbers mean
 
@@ -100,16 +161,22 @@ src/
     flowTracker.js        pyramidal Lucas-Kanade optical flow
     leafAnchors.js        stable tracked leaf regions with real per-region metrics
     maskAnalysis.js       components, boundary trace, simplify, smooth, distance transform, medial axis
-    plantAnalyzer.js      orchestrates the three stages
+    plantAnalyzer.js      orchestrates the stages; segmentation gates detection
+    healthStabilizer.js   low-pass + hysteresis so the vitality figure is readable
+    leafHealth.js         shared per-region colour metrics
+    leafSegmenter.js      SlimSAM leaf tracing (lazy, optional)
   ui/
     arOverlay.js          contour + structure canvas rendering
     leafMarkers.js        DOM leaf markers and their detail cards
     diagnosis.js          result card + diagnosis sheet content
     sheet.js              shared bottom-sheet behaviour
     viewportMap.js        object-fit: cover coordinate mapping
+    leafInspector.js      frozen-frame leaf tracing flow
+    status.js             single source of status wording
 public/
   mediapipe/wasm/         MediaPipe runtime, self-hosted (no CDN at runtime)
   models/deeplab_v3.tflite
+  models/slimsam/         SlimSAM weights, self-hosted (~13 MB)
   assets/specimens/       test images
 ml/
   train.py, model.py, …   MobileNetV2 disease classifier training
@@ -137,6 +204,7 @@ and test than with a genuinely perfect model.
 | `vite` | MIT | build + dev server |
 | `@vitejs/plugin-basic-ssl` | MIT | HTTPS in dev, so phones can use the camera |
 | `@mediapipe/tasks-vision` | Apache-2.0 | DeepLabV3 image segmentation |
+| `@huggingface/transformers` | Apache-2.0 | SlimSAM leaf tracing (lazy-loaded) |
 
 MediaPipe's WASM runtime is self-hosted under `public/mediapipe/wasm/` rather
 than loaded from a CDN. Both SIMD and non-SIMD builds are present (~18 MB in the

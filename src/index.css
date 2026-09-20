@@ -738,3 +738,125 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   .chip, .identity-icon, .secondary-icon, .result-card, .leaf-marker-card { background: rgba(12, 16, 13, 0.94); }
   .sheet-panel { background: rgba(10, 13, 11, 0.98); }
 }
+
+
+/* --------------------------------------------------------------------------
+   Leaf inspection — frozen frame, traced outline
+   -------------------------------------------------------------------------- */
+
+/* While inspecting, the live chrome steps back so the traced leaf is the
+   only thing competing for attention. */
+#stage.is-inspecting #result-card-wrap,
+#stage.is-inspecting #bottom-bar,
+#stage.is-inspecting #marker-layer,
+#stage.is-inspecting #guidance {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease);
+}
+
+.inspect-panel {
+  position: absolute;
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: var(--safe-bottom);
+  z-index: 30;
+  padding: 14px 16px 16px;
+  border-radius: var(--radius);
+  background: var(--glass-strong);
+  border: 1px solid var(--hairline);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+}
+
+.inspect-panel[hidden] { display: none; }
+.inspect-panel.is-open { opacity: 1; transform: translateY(0); }
+
+.inspect-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+.inspect-heading { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+.inspect-name {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.inspect-status { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.inspect-status[data-status="healthy"] { color: var(--mint); }
+.inspect-status[data-status="watch"]   { color: var(--amber); }
+.inspect-status[data-status="concern"] { color: var(--coral); }
+
+/* Determinate while weights download, indeterminate while the model runs. */
+.inspect-progress {
+  height: 2px;
+  margin: 12px 0 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.inspect-panel[data-phase="done"] .inspect-progress,
+.inspect-panel[data-phase="failed"] .inspect-progress { display: none; }
+
+.inspect-progress::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--progress, 30%);
+  background: var(--mint);
+  border-radius: 999px;
+  transition: width 0.2s linear;
+}
+
+.inspect-panel[data-phase="working"] .inspect-progress::after {
+  width: 35%;
+  animation: inspect-sweep 1.1s var(--ease) infinite;
+}
+
+@keyframes inspect-sweep {
+  0%   { left: -35%; }
+  100% { left: 100%; }
+}
+
+.inspect-content:not(:empty) { margin-top: 14px; }
+
+.inspect-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 14px;
+}
+
+.inspect-metric { display: flex; flex-direction: column; gap: 2px; }
+.inspect-metric dt { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
+.inspect-metric dd { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.inspect-note {
+  margin-top: 12px; padding-top: 11px;
+  border-top: 1px solid var(--hairline-soft);
+  font-size: 11px; line-height: 1.5; color: var(--text-faint);
+}
+
+@media (max-height: 680px) {
+  .inspect-metrics { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .inspect-metric dd { font-size: 13px; }
+}
+
+.leaf-inspect-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px 0;
+  border-radius: 9px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #0a1410;
+  background: var(--mint);
+  transition: transform 0.15s var(--ease);
+}
+
+.leaf-inspect-btn:active { transform: scale(0.97); }

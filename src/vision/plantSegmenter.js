@@ -20,6 +20,13 @@ const TARGET_INTERVAL_MS = 120;
 // this is only the fallback if the label list comes back in an unexpected shape.
 const POTTED_PLANT_FALLBACK_INDEX = 16;
 
+/**
+ * A mask older than this is no longer evidence about what the camera sees.
+ * Generous enough to ride out a few rejected frames, short enough that the UI
+ * drops back to "no plant" rather than describing a scene that has moved on.
+ */
+const STALE_AFTER_MS = 700;
+
 function assetUrl(relativePath) {
   return new URL(relativePath, document.baseURI).href;
 }
@@ -41,6 +48,18 @@ export class PlantSegmenter {
     this.coverage = 0;
     this.lastRunAt = 0;
     this.inFlight = false;
+
+    /**
+     * MediaPipe requires strictly increasing timestamps and rejects a frame
+     * that does not advance its internal clock. Driving that from
+     * `performance.now()` is fragile — the clock can be re-based, and any
+     * rejected frame used to be swallowed, leaving the previous mask in place.
+     * A private counter can only ever go up.
+     */
+    this.timestamp = 0;
+    /** When a mask was last genuinely produced, for staleness checks. */
+    this.lastIngestAt = 0;
+    this.consecutiveFailures = 0;
   }
 
   async load() {
@@ -97,11 +116,14 @@ export class PlantSegmenter {
 
     this.lastRunAt = timestampMs;
     this.inFlight = true;
+    this.timestamp += 34;
 
     try {
-      this.segmenter.segmentForVideo(source, timestampMs, (result) => {
+      this.segmenter.segmentForVideo(source, this.timestamp, (result) => {
         try {
           this.ingest(result);
+          this.lastIngestAt = timestampMs;
+          this.consecutiveFailures = 0;
         } finally {
           result.close?.();
           this.inFlight = false;
@@ -109,9 +131,14 @@ export class PlantSegmenter {
       });
     } catch (err) {
       this.inFlight = false;
-      // A single bad frame (zero-size canvas mid-resize, out-of-order
-      // timestamp) should not disable segmentation for the rest of the session.
-      console.debug('[PlantSegmenter] frame skipped:', err?.message);
+      this.consecutiveFailures++;
+      // A single bad frame (zero-size canvas mid-resize) is survivable, but it
+      // must not pass silently: the previous mask stays in memory, and
+      // reporting it as current is how the app ends up confidently describing
+      // a plant that is no longer in front of the camera.
+      if (this.consecutiveFailures === 1 || this.consecutiveFailures % 30 === 0) {
+        console.warn('[PlantSegmenter] frame rejected:', err?.message);
+      }
     }
   }
 
@@ -140,9 +167,14 @@ export class PlantSegmenter {
     this.coverage = hits / categories.length;
   }
 
-  /** True once a usable plant mask has actually been produced. */
-  hasMask() {
-    return this.available && this.mask !== null && this.coverage > 0.004;
+  /**
+   * True once a usable and *current* plant mask exists. A mask older than
+   * STALE_AFTER_MS is treated as absent rather than reported as live.
+   */
+  hasMask(nowMs = this.lastRunAt) {
+    if (!this.available || this.mask === null) return false;
+    if (nowMs - this.lastIngestAt > STALE_AFTER_MS) return false;
+    return this.coverage > 0.004;
   }
 
   dispose() {
@@ -153,5 +185,8 @@ export class PlantSegmenter {
     }
     this.segmenter = null;
     this.available = false;
+    this.mask = null;
+    this.coverage = 0;
+    this.lastIngestAt = 0;
   }
 }
