@@ -69,11 +69,16 @@ export class PlantSegmenter {
     this.inFlight = false;
 
     /**
-     * MediaPipe requires strictly increasing timestamps and rejects a frame
-     * that does not advance its internal clock. Driving that from
-     * `performance.now()` is fragile — the clock can be re-based, and any
-     * rejected frame used to be swallowed, leaving the previous mask in place.
-     * A private counter can only ever go up.
+     * The clock handed to MediaPipe. It must increase strictly, and it must
+     * also stay close to real time: VIDEO mode uses it for internal sync, and
+     * a clock that drifts progressively further behind the wall clock degrades
+     * over minutes rather than failing outright.
+     *
+     * An earlier version incremented a fixed 34ms per call while `update` ran
+     * roughly every 120ms, so it fell behind by ~3.5x and the gap grew without
+     * bound — fine for the first few seconds, useless later. Tracking
+     * `performance.now()` while forcing strict monotonicity gives both
+     * properties.
      */
     this.timestamp = 0;
     /** When a mask was last genuinely produced, for staleness checks. */
@@ -151,7 +156,8 @@ export class PlantSegmenter {
     this.lastRunAt = timestampMs;
     this.inFlight = true;
     this.inFlightSince = timestampMs;
-    this.timestamp += 34;
+    // Real-time aligned, and strictly increasing even if the clock repeats.
+    this.timestamp = Math.max(this.timestamp + 1, Math.round(timestampMs));
 
     try {
       this.segmenter.segmentForVideo(source, this.timestamp, (result) => {

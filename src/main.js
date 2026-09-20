@@ -10,6 +10,7 @@ import { coverTransform } from './ui/viewportMap.js';
 import { statusFor, statusChipLabel } from './ui/status.js';
 import { LeafSegmenter } from './vision/leafSegmenter.js';
 import { LeafInspector } from './ui/leafInspector.js';
+import { DebugHud } from './ui/debugHud.js';
 
 /** Vision runs at ~30 Hz; the overlay still draws every frame. */
 const ANALYSIS_INTERVAL_MS = 33;
@@ -46,6 +47,7 @@ class App {
     });
 
     this.tipsSheet = new Sheet(document.getElementById('tips-sheet'));
+    this.hud = new DebugHud();
 
     this.guidance = document.getElementById('guidance');
     this.guidanceTitle = document.getElementById('guidance-title');
@@ -63,6 +65,8 @@ class App {
     this.lastAnalysisAt = 0;
     this.lastStructureAt = 0;
     this.latest = null;
+    /** Whether the last loop iteration got a usable camera frame. */
+    this.lastHadFrame = false;
 
     this.bindControls();
     this.start();
@@ -193,11 +197,13 @@ class App {
 
     if (this.frozen) {
       this.overlay.render(this.latest, this.displayCanvas, now);
+      this.hud.update(this, now);
       requestAnimationFrame(this.loop);
       return;
     }
 
     const hasFrame = this.camera.renderFrame();
+    this.lastHadFrame = hasFrame;
 
     if (hasFrame && now - this.lastAnalysisAt >= ANALYSIS_INTERVAL_MS) {
       this.lastAnalysisAt = now;
@@ -217,6 +223,7 @@ class App {
       this.positionMarkers();
     }
 
+    this.hud.update(this, now);
     requestAnimationFrame(this.loop);
   };
 

@@ -861,3 +861,36 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 
 .leaf-inspect-btn:active { transform: scale(0.97); }
+
+
+/* --------------------------------------------------------------------------
+   Debug HUD (?debug)
+   -------------------------------------------------------------------------- */
+
+.debug-hud {
+  position: fixed;
+  top: calc(var(--safe-top) + 44px);
+  left: var(--safe-left);
+  z-index: 90;
+  max-width: 200px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.82);
+  color: #d8ffe4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  line-height: 1.5;
+  pointer-events: auto;
+}
+
+.debug-hud.is-min { max-height: 26px; overflow: hidden; opacity: 0.55; }
+
+.debug-row { display: flex; justify-content: space-between; gap: 10px; }
+.debug-row span { opacity: 0.55; }
+.debug-row b { font-weight: 600; }
+
+.debug-sep {
+  margin: 4px 0 2px;
+  opacity: 0.45;
+  letter-spacing: 0.04em;
+}
