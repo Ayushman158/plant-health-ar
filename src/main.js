@@ -12,14 +12,17 @@ class MoneyPlantDocApp {
     this.displayCanvas = document.getElementById('display-canvas');
     this.tracerCanvas = document.getElementById('tracer-canvas');
     this.scanFrameEl = document.getElementById('spatial-scan-frame');
-    this.reticleHintEl = document.getElementById('reticle-hint');
     this.statusPillEl = document.getElementById('spatial-status-pill');
     this.statusTextEl = document.getElementById('scanner-status-text');
-    this.activeSpecimenLabel = document.getElementById('active-specimen-label');
     this.pinsContainer = document.getElementById('spatial-pins-layer');
-    this.shutterBtn = document.getElementById('main-diagnose-btn');
-    this.cameraFlipBtn = document.getElementById('camera-flip-btn');
-    this.bottomAiBtn = document.getElementById('bottom-ai-chat-btn');
+
+    // Action Controls
+    this.scanPlantBtn = document.getElementById('btn-scan-plant');
+    this.galleryBtn = document.getElementById('btn-gallery');
+    this.galleryFileInput = document.getElementById('gallery-file-input');
+    this.tipsBtn = document.getElementById('btn-tips');
+    this.tipsModal = document.getElementById('tips-modal');
+    this.closeTipsBtn = document.getElementById('close-tips-btn');
 
     this.isDetected = false;
     this.latestAnalysis = null;
@@ -29,25 +32,25 @@ class MoneyPlantDocApp {
     this.leafDetector = new LeafDetector();
     this.leafTracer = new LeafTracer(this.tracerCanvas);
 
-    // Spatial Leaf Pins
+    // Spatial Leaf Annotations
     this.pinManager = new PinManager(this.pinsContainer, (pin) => {
       this.onLeafPinSelected(pin);
     });
     this.pinManager.setSourceCanvas(this.displayCanvas);
 
-    // Live Floating Condition Card & Prescription
+    // Primary Result Card & Diagnosis Sheet
     this.conditionCard = new ConditionCard(
       document.getElementById('condition-card-anchor'),
       document.getElementById('prescription-modal')
     );
 
-    // AI Doctor Consultation Modal
+    // AI Doctor Consultation Modal (Gemma)
     this.aiDocModal = new AiDocModal(
       document.getElementById('ai-doc-modal'),
-      this.bottomAiBtn
+      null // opened via diagnosis sheet button
     );
 
-    // Connect prescription modal's "Ask AI Doc" button
+    // Wire up "Ask Plant Doctor" button inside diagnosis sheet
     this.conditionCard.setAiConsultCallback((analysis) => {
       this.aiDocModal.open();
     });
@@ -57,49 +60,82 @@ class MoneyPlantDocApp {
   }
 
   initControls() {
-    // Camera Flip / Switcher
-    if (this.cameraFlipBtn) {
-      this.cameraFlipBtn.addEventListener('click', async () => {
-        if (navigator.vibrate) navigator.vibrate(15);
-        if (this.cameraFlipBtn) {
-          this.cameraFlipBtn.disabled = true;
+    // 1. Scan Plant Primary Action Button
+    if (this.scanPlantBtn) {
+      this.scanPlantBtn.addEventListener('click', () => {
+        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+
+        // Capture high-resolution live snapshot from camera canvas
+        const snapshot = this.cameraStream.captureSnapshot();
+
+        // Update result card thumbnail
+        const thumbImg = document.getElementById('result-card-thumb');
+        if (thumbImg && snapshot) {
+          thumbImg.src = snapshot;
         }
-        await this.cameraStream.flipCamera();
-        if (this.cameraFlipBtn) {
-          this.cameraFlipBtn.disabled = false;
-        }
+
+        // Open Apple-style Diagnosis Bottom Sheet
+        this.conditionCard.openPrescription(this.latestAnalysis, snapshot);
       });
     }
 
-    // Shutter Scan & Diagnose Button
-    if (this.shutterBtn) {
-      this.shutterBtn.addEventListener('click', () => {
-        if (navigator.vibrate) navigator.vibrate([25, 60, 25]);
+    // 2. Gallery Button & File Upload
+    if (this.galleryBtn && this.galleryFileInput) {
+      this.galleryBtn.addEventListener('click', () => {
+        if (navigator.vibrate) navigator.vibrate(15);
+        this.galleryFileInput.click();
+      });
 
-        // Capture live frame snapshot from camera canvas
-        const snapshot = this.cameraStream.captureSnapshot();
+      this.galleryFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
 
-        // Trigger diagnostic clinical prescription modal
-        this.conditionCard.openPrescription(this.latestAnalysis, snapshot);
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const dataUrl = event.target.result;
+          await this.cameraStream.loadSpecimen(dataUrl);
+
+          const thumbImg = document.getElementById('result-card-thumb');
+          if (thumbImg) {
+            thumbImg.src = dataUrl;
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 3. Tips Button & Bottom Sheet
+    if (this.tipsBtn && this.tipsModal) {
+      this.tipsBtn.addEventListener('click', () => {
+        if (navigator.vibrate) navigator.vibrate(15);
+        this.tipsModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      });
+    }
+
+    if (this.closeTipsBtn && this.tipsModal) {
+      this.closeTipsBtn.addEventListener('click', () => {
+        this.tipsModal.classList.add('hidden');
+        document.body.style.overflow = '';
+      });
+
+      this.tipsModal.addEventListener('click', (e) => {
+        if (e.target === this.tipsModal) {
+          this.tipsModal.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
       });
     }
   }
 
   async init() {
-    // 1. Start computer vision rendering loop
+    // Start computer vision rendering loop
     this.startLoop();
 
-    // 2. Request and start live camera
+    // Request and start camera
     const cameraAvailable = await this.cameraStream.startCamera();
-    if (cameraAvailable) {
-      if (this.activeSpecimenLabel) {
-        this.activeSpecimenLabel.textContent = 'Live Camera Active';
-      }
-    } else {
-      if (this.activeSpecimenLabel) {
-        this.activeSpecimenLabel.textContent = 'Camera Unavailable · Test Mode';
-      }
-      // Fallback to high-res specimen image if browser strictly blocks camera
+    if (!cameraAvailable) {
+      // Graceful fallback to high-res specimen image if browser restricts camera
       await this.cameraStream.loadSpecimen('https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=1000&q=85');
     }
   }
@@ -116,8 +152,8 @@ class MoneyPlantDocApp {
       // 1. Render Video Frame from Camera
       const hasFrame = this.cameraStream.renderFrame();
 
-      // 2. Run Real-Time Computer Vision Leaf Detection pass (~30 fps)
-      if (hasFrame && time - lastCvTime > 28) {
+      // 2. Real-Time Computer Vision Detection (~30 fps)
+      if (hasFrame && time - lastCvTime > 30) {
         lastCvTime = time;
         this.latestAnalysis = this.leafDetector.analyze(this.displayCanvas);
         const analysis = this.latestAnalysis;
@@ -136,44 +172,47 @@ class MoneyPlantDocApp {
             }
           }
 
-          if (this.reticleHintEl) {
-            this.reticleHintEl.textContent = analysis.distanceTip || 'Money Plant Locked';
-          }
           if (this.statusTextEl) {
-            this.statusTextEl.textContent = `${diag.healthScore}% Healthy`;
+            if (diag.healthScore >= 80) {
+              this.statusTextEl.textContent = 'Healthy';
+              if (this.statusPillEl) this.statusPillEl.className = 'status-pill-badge optimal';
+            } else if (diag.healthScore >= 65) {
+              this.statusTextEl.textContent = 'Moderate';
+              if (this.statusPillEl) this.statusPillEl.className = 'status-pill-badge warning';
+            } else {
+              this.statusTextEl.textContent = 'Attention';
+              if (this.statusPillEl) this.statusPillEl.className = 'status-pill-badge alert';
+            }
           }
 
-          // Update dynamic color on tracer based on diagnosis
+          // Dynamic contour tracer color
           const tracerColor = diag.healthScore >= 80 ? '#86efac' : (diag.healthScore >= 65 ? '#fed7aa' : '#fca5a5');
           this.leafTracer.setColor(tracerColor, diag.category);
 
-          // Update live condition card telemetry and advice
+          // Update primary result card
           this.conditionCard.updateLiveTelemetry(analysis);
 
-          // Update smooth tracking reticle box
+          // Position minimal 4 corner brackets smoothly
           this.scanFrameEl.style.left = `${b.x * 100}%`;
           this.scanFrameEl.style.top = `${b.y * 100}%`;
           this.scanFrameEl.style.width = `${b.width * 100}%`;
           this.scanFrameEl.style.height = `${b.height * 100}%`;
 
-          // Dynamically anchor AR pins on leaf foliage
+          // Spatial leaf annotations
           if (analysis.dynamicPins && analysis.dynamicPins.length > 0) {
             this.pinManager.setPins(analysis.dynamicPins);
           }
         } else {
-          // Transition to IDLE state
+          // Transition to IDLE searching state
           if (this.isDetected) {
             this.isDetected = false;
             this.scanFrameEl.classList.remove('locked');
             this.scanFrameEl.classList.add('idle');
             if (this.statusPillEl) {
-              this.statusPillEl.className = 'status-pill-badge';
-            }
-            if (this.reticleHintEl) {
-              this.reticleHintEl.textContent = 'Align Money Plant in Viewfinder';
+              this.statusPillEl.className = 'status-pill-badge searching';
             }
             if (this.statusTextEl) {
-              this.statusTextEl.textContent = 'Searching...';
+              this.statusTextEl.textContent = 'Scanning...';
             }
 
             this.scanFrameEl.style.left = '';
@@ -190,7 +229,7 @@ class MoneyPlantDocApp {
         }
       }
 
-      // 3. Render Real-Time Luminous ASCII / Dot Matrix Leaf Tracing & Pixel-Trail
+      // 3. Render Smooth Glowing AR Outline, Central Marker & Keypoints
       this.leafTracer.render(this.latestAnalysis, this.displayCanvas);
 
       requestAnimationFrame(render);
@@ -200,8 +239,7 @@ class MoneyPlantDocApp {
   }
 }
 
-// Bootstrap Money Plant Doc application on DOM load
+// Bootstrap application on DOM load
 window.addEventListener('DOMContentLoaded', () => {
   new MoneyPlantDocApp();
 });
-

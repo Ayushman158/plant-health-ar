@@ -1,36 +1,35 @@
 /* ==========================================================================
-   MONEY PLANT DOC — Mobile-Optimized Botanical Health & Care System
-   Spatial AR Leaf Telemetry & Clinical Diagnosis
+   MONEY PLANT — Modern Botanical Care & Diagnostic System
+   iOS Camera × Modern Plant-Care App × Lightweight AR Aesthetic
    ========================================================================== */
 
 :root {
-  /* Botanical Semantic Palette */
+  /* Botanical Palette */
   --mint-primary: #86efac;
-  --mint-glow: rgba(134, 239, 172, 0.45);
-  --mint-subtle: rgba(134, 239, 172, 0.12);
+  --mint-vibrant: #4ade80;
+  --emerald-rich: #22c55e;
   --emerald-deep: #15803d;
-  --emerald-vibrant: #22c55e;
   
-  --peach-warning: #fed7aa;
+  --amber-warning: #fed7aa;
   --coral-alert: #fca5a5;
   --ice-water: #bae6fd;
   --sun-butter: #fef08a;
 
   /* Frosted Glass & Surface Tokens */
   --bg-obsidian: #070c0a;
-  --glass-card-bg: rgba(15, 23, 19, 0.82);
-  --glass-card-border: rgba(255, 255, 255, 0.14);
-  --glass-card-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.22), 0 0 1px rgba(255, 255, 255, 0.18);
-  --glass-blur: blur(28px) saturate(190%);
+  --glass-surface-bg: rgba(17, 23, 19, 0.86);
+  --glass-card-border: rgba(255, 255, 255, 0.12);
+  --glass-card-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --glass-blur: blur(28px) saturate(180%);
 
-  /* Contrast-Tuned Secondary Text Tokens (WCAG AA Compliant >= 4.5:1) */
+  /* Contrast-Tuned Typography Tokens */
   --text-primary: #ffffff;
   --text-secondary: rgba(226, 248, 235, 0.76);
-  --text-muted: rgba(203, 213, 225, 0.72);
+  --text-muted: rgba(203, 213, 225, 0.65);
 
   /* Typography */
-  --font-brand: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-brand: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -42,24 +41,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Themed Browser Surfaces */
 ::selection {
-  background: rgba(134, 239, 172, 0.28);
+  background: rgba(134, 239, 172, 0.3);
   color: #ffffff;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -67,17 +61,9 @@
   border-radius: 999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(134, 239, 172, 0.4);
-}
-
 *:focus-visible {
   outline: 2px solid var(--mint-primary);
   outline-offset: 3px;
-}
-
-input, textarea {
-  caret-color: var(--mint-primary);
 }
 
 html, body {
@@ -97,7 +83,7 @@ html, body {
 }
 
 /* ==========================================================================
-   Main Viewport
+   Main Viewport & Media Layers
    ========================================================================== */
 #app-viewport {
   position: relative;
@@ -105,15 +91,11 @@ html, body {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  overscroll-behavior: none;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
-/* ==========================================================================
-   Media Layer & Canvases
-   ========================================================================== */
 #media-layer {
   position: absolute;
   inset: 0;
@@ -134,10 +116,9 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: filter 0.4s ease;
 }
 
-/* Real-time Dot-Matrix / ASCII Leaf Tracing & Pixel-Trail Canvas */
+/* AR Contour & Central Marker Canvas */
 #tracer-canvas {
   position: absolute;
   inset: 0;
@@ -147,52 +128,36 @@ html, body {
   z-index: 2;
 }
 
-/* NDVI Spectral Scan Canvas */
 #spectral-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  mix-blend-mode: screen;
-  z-index: 3;
-}
-
-#spectral-canvas.active {
-  opacity: 0.92;
+  display: none;
 }
 
 .viewport-ambient-vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(circle at center, transparent 35%, rgba(7, 12, 10, 0.7) 100%);
-  z-index: 4;
+  background: radial-gradient(circle at center, transparent 40%, rgba(7, 12, 10, 0.65) 100%);
+  z-index: 3;
 }
 
-
-
 /* ==========================================================================
-   Spatial Viewfinder Reticle (Mobile Responsive)
+   Minimal Corner Brackets (Apple Camera Viewfinder Reticle)
    ========================================================================== */
 #spatial-scan-frame {
   position: absolute;
   pointer-events: none;
   border-radius: 20px;
-  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 10;
 }
 
 #spatial-scan-frame.idle {
-  top: 48%;
+  top: 45%;
   left: 50%;
-  width: min(76vw, 290px);
-  height: min(42vh, 330px);
+  width: min(78vw, 300px);
+  height: min(45vh, 340px);
   transform: translate(-50%, -50%);
-  opacity: 0.85;
+  opacity: 0.75;
 }
 
 #spatial-scan-frame.locked {
@@ -201,9 +166,9 @@ html, body {
 
 .scan-corner {
   position: absolute;
-  width: 22px;
-  height: 22px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
   transition: border-color 0.3s ease;
 }
 
@@ -211,56 +176,117 @@ html, body {
   border-color: var(--mint-primary);
 }
 
-.scan-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-top-left-radius: 14px; }
-.scan-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-top-right-radius: 14px; }
-.scan-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-bottom-left-radius: 14px; }
-.scan-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-bottom-right-radius: 14px; }
+.scan-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-top-left-radius: 12px; }
+.scan-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-top-right-radius: 12px; }
+.scan-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-bottom-left-radius: 12px; }
+.scan-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-bottom-right-radius: 12px; }
 
-.scan-center-cross {
+/* ==========================================================================
+   Spatial Leaf Annotations Layer
+   ========================================================================== */
+#spatial-pins-layer {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 14px;
-  height: 14px;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12;
+}
+
+.spatial-leaf-pin {
+  position: absolute;
   transform: translate(-50%, -50%);
-  opacity: 0.4;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 15;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.scan-center-cross::before, .scan-center-cross::after {
-  content: '';
+.pin-target {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.pin-core {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pin-color, var(--mint-primary));
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.5);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pin-pulse {
   position: absolute;
-  background: #ffffff;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pin-color, var(--mint-primary));
+  animation: pinPulse 2.4s infinite cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
-.scan-center-cross::before {
-  top: 6px;
-  left: 0;
-  width: 14px;
-  height: 2px;
+@keyframes pinPulse {
+  0% { transform: scale(0.8); opacity: 0.85; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
 
-.scan-center-cross::after {
-  top: 0;
-  left: 6px;
-  width: 2px;
-  height: 14px;
-}
-
-.scan-hint-tag {
+.pin-card-popover {
   position: absolute;
-  bottom: -30px;
+  bottom: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%);
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 4px 12px;
-  border-radius: 999px;
+  transform: translateX(-50%) translateY(4px);
+  background: rgba(16, 22, 18, 0.94);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-radius: 12px;
+  padding: 6px 12px;
   white-space: nowrap;
-  letter-spacing: -0.01em;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 30;
+}
+
+.spatial-leaf-pin.active .pin-card-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.popover-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.popover-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.popover-score {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--pin-color, var(--mint-primary));
+  margin-left: 2px;
+}
+
+.popover-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  font-weight: 400;
 }
 
 /* ==========================================================================
@@ -273,10 +299,10 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding-top: max(12px, env(safe-area-inset-top, 16px));
-  padding-bottom: max(12px, env(safe-area-inset-bottom, 16px));
-  padding-left: max(14px, env(safe-area-inset-left, 16px));
-  padding-right: max(14px, env(safe-area-inset-right, 16px));
+  padding-top: max(14px, env(safe-area-inset-top, 18px));
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 20px));
+  padding-left: max(16px, env(safe-area-inset-left, 18px));
+  padding-right: max(16px, env(safe-area-inset-right, 18px));
   pointer-events: none;
   z-index: 25;
 }
@@ -285,69 +311,66 @@ html, body {
   pointer-events: auto;
 }
 
-/* Top Bar */
+/* ==========================================================================
+   Top Bar (Botanical Identity & Single Status Badge)
+   ========================================================================== */
 .app-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding-top: 2px;
+  padding: 4px 2px;
 }
 
 .brand-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .brand-icon-wrap {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: rgba(134, 239, 172, 0.16);
-  border: 1px solid rgba(134, 239, 172, 0.3);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(22, 32, 25, 0.75);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   color: var(--mint-primary);
   flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .brand-title {
   font-family: var(--font-brand);
-  font-size: 15px;
+  font-size: 16.5px;
   font-weight: 600;
-  letter-spacing: -0.02em;
   color: #ffffff;
+  letter-spacing: -0.01em;
   line-height: 1.15;
 }
 
 .brand-subtitle {
-  font-size: 11.5px;
-  color: var(--text-secondary);
-  font-weight: 500;
+  font-size: 12px;
+  color: rgba(187, 247, 208, 0.72);
+  font-weight: 400;
   letter-spacing: -0.01em;
-}
-
-.top-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .status-pill-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(15, 23, 19, 0.8);
+  gap: 7px;
+  background: rgba(16, 24, 19, 0.82);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  padding: 5px 12px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  padding: 6px 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .status-dot {
@@ -355,358 +378,291 @@ html, body {
   height: 7px;
   border-radius: 50%;
   background: var(--mint-primary);
-  box-shadow: 0 0 0 2px rgba(134, 239, 172, 0.2);
-}
-
-.status-label {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--mint-primary);
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-
-/* ==========================================================================
-   Planto Floating Condition Card (Mobile Collapsible)
-   ========================================================================== */
-.condition-card-anchor {
-  position: absolute;
-  bottom: calc(max(12px, env(safe-area-inset-bottom, 16px)) + 74px);
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 360px;
-  width: calc(100% - 28px);
-  z-index: 15;
-  transition: bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.planto-condition-card {
-  background: var(--glass-card-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
-  border-radius: 22px;
-  padding: 14px 16px;
-  box-shadow: var(--glass-card-shadow);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.condition-title-wrap {
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  flex: 1;
-}
-
-.card-heading {
-  font-family: var(--font-brand);
-  font-size: 14.5px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-}
-
-.card-subheading {
-  font-size: 11px;
-  color: var(--mint-primary);
-  font-weight: 500;
-}
-
-.card-top-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-card-toggle {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn-card-toggle:active {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.btn-card-chevron {
-  min-height: 36px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  padding: 6px 13px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 11.5px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: background 0.2s ease, transform 0.15s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn-card-chevron:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.chevron-mini-svg {
-  opacity: 0.8;
-}
-
-/* Real-Time Live Advice Readout */
-.live-diagnostic-summary {
-  margin-top: 10px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  transition: opacity 0.2s ease;
-}
-
-#live-diagnostic-text {
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--text-secondary);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-
-/* 4 Metric Tiles Grid */
-.condition-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-top: 10px;
-  opacity: 1;
-  transform-origin: top;
-  transform: scaleY(1);
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Minimized Telemetry State for Mobile Space */
-.planto-condition-card.minimized {
-  border-radius: 999px;
-  padding: 10px 14px;
-}
-
-.planto-condition-card.minimized .live-diagnostic-summary,
-.planto-condition-card.minimized .condition-metrics-grid {
-  display: none;
-  opacity: 0;
-  transform: scaleY(0);
-}
-
-.metric-tile {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 7px 10px;
-}
-
-.metric-icon-circle {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow: 0 0 0 2px rgba(134, 239, 172, 0.25);
   flex-shrink: 0;
 }
 
-.water-bg { background: rgba(186, 230, 253, 0.15); color: var(--ice-water); }
-.light-bg { background: rgba(254, 240, 138, 0.15); color: var(--sun-butter); }
-.vigor-bg { background: rgba(134, 239, 172, 0.15); color: var(--mint-primary); }
-.temp-bg { background: rgba(252, 165, 165, 0.15); color: var(--coral-alert); }
-
-.metric-data {
-  display: flex;
-  flex-direction: column;
+.status-pill-badge.searching .status-dot {
+  background: #cbd5e1;
+  box-shadow: none;
 }
 
-.metric-label {
-  font-size: 11px;
-  color: var(--text-secondary);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.status-pill-badge.warning .status-dot {
+  background: var(--amber-warning);
+  box-shadow: 0 0 0 2px rgba(254, 215, 170, 0.25);
 }
 
-.metric-value {
-  font-family: var(--font-mono);
-  font-size: 13px;
+.status-pill-badge.alert .status-dot {
+  background: var(--coral-alert);
+  box-shadow: 0 0 0 2px rgba(252, 165, 165, 0.25);
+}
+
+.status-label {
+  font-size: 12.5px;
   font-weight: 600;
   color: #ffffff;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
 }
 
 /* ==========================================================================
-   Bottom Bar Controls (Mobile Ergonomics)
+   Primary Floating Result Card (Near Bottom)
+   ========================================================================== */
+.condition-card-anchor {
+  position: absolute;
+  bottom: calc(max(18px, env(safe-area-inset-bottom, 20px)) + 104px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 440px;
+  width: calc(100% - 32px);
+  z-index: 20;
+}
+
+.planto-result-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--glass-surface-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-card-border);
+  border-radius: 26px;
+  padding: 13px 16px;
+  box-shadow: var(--glass-card-shadow);
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.planto-result-card:active {
+  transform: scale(0.985);
+  background: rgba(22, 30, 25, 0.92);
+}
+
+.result-thumb-wrap {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #121a14;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.result-card-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.result-info-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.result-title {
+  font-family: var(--font-brand);
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.result-desc {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Circular Vitality Progress Ring */
+.result-vitality-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vitality-ring-container {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vitality-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.vitality-bg-circle {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 4;
+}
+
+.vitality-progress-circle {
+  fill: none;
+  stroke: var(--mint-vibrant);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 163.36;
+  stroke-dashoffset: 11.4; /* ~93% */
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease;
+}
+
+.vitality-text-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.vitality-pct {
+  font-family: var(--font-brand);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.vitality-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   Bottom Bar (Gallery | Scan Plant | Tips)
    ========================================================================== */
 .app-bottom-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding-bottom: 2px;
-  gap: 8px;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 0 12px 6px 12px;
 }
 
-/* Camera Flip / Control Pill */
-.camera-control-pill-btn {
-  min-height: 44px;
+.bottom-action-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
-  background: rgba(15, 23, 19, 0.82);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
-  border-radius: 999px;
-  padding: 10px 14px;
-  color: #ffffff;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  white-space: nowrap;
-}
-
-.camera-control-pill-btn:active {
-  transform: scale(0.95);
-}
-
-.camera-control-pill-btn svg {
-  color: var(--mint-primary);
-  flex-shrink: 0;
-}
-
-/* Center Shutter Diagnostic Trigger */
-.shutter-scanner-btn {
-  position: relative;
-  width: clamp(60px, 16vw, 68px);
-  height: clamp(60px, 16vw, 68px);
-  flex-shrink: 0;
-  border-radius: 50%;
   background: transparent;
   border: none;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
-.shutter-scanner-btn:active {
+.action-btn-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(22, 30, 24, 0.82);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.bottom-action-btn:active .action-btn-circle {
+  transform: scale(0.92);
+  background: rgba(30, 42, 33, 0.95);
+}
+
+.action-btn-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: -0.01em;
+}
+
+/* Primary Center Shutter Button */
+.bottom-scan-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.scan-btn-outer-ring {
+  position: absolute;
+  top: -4px;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 2px solid rgba(134, 239, 172, 0.45);
+  animation: scanRingPulse 2.8s infinite ease-in-out;
+}
+
+@keyframes scanRingPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.06); opacity: 0.85; }
+}
+
+.scan-btn-core {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6ee7b7 0%, #22c55e 100%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.55);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bottom-scan-btn:active .scan-btn-core {
   transform: scale(0.92);
 }
 
-.shutter-glow-ring {
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(134, 239, 172, 0.6);
-  animation: pulseRing 2.4s infinite ease-in-out;
-}
-
-@keyframes pulseRing {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.08); opacity: 0.95; }
-}
-
-.shutter-inner-core {
-  width: calc(100% - 12px);
-  height: calc(100% - 12px);
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #051a0d;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.45);
-}
-
-.shutter-icon {
-  width: 24px;
-  height: 24px;
-}
-
-/* AI Doc Consultation Pill */
-.ai-doc-pill-btn {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(15, 23, 19, 0.82);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
-  border-radius: 999px;
-  padding: 10px 14px;
-  color: #ffffff;
+.scan-btn-label {
+  margin-top: 10px;
   font-size: 12.5px;
   font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  white-space: nowrap;
-}
-
-.ai-doc-pill-btn:active {
-  transform: scale(0.95);
-}
-
-.ai-sparkle-svg {
-  color: var(--mint-primary);
-  flex-shrink: 0;
+  color: #ffffff;
+  letter-spacing: -0.01em;
 }
 
 /* ==========================================================================
-   Modals: Mobile Bottom Sheets
+   Modals: Apple Botanical Bottom Sheets
    ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   z-index: 100;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.28s ease;
 }
 
 .modal-overlay.hidden {
@@ -714,36 +670,34 @@ html, body {
   pointer-events: none;
 }
 
-.modal-card {
+.modal-card.botanical-sheet {
   width: 100%;
   max-width: 500px;
-  background: rgba(15, 24, 19, 0.97);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: rgba(16, 23, 18, 0.97);
+  backdrop-filter: blur(36px) saturate(190%);
+  -webkit-backdrop-filter: blur(36px) saturate(190%);
   border: 1px solid var(--glass-card-border);
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  padding: 16px 18px max(24px, env(safe-area-inset-bottom, 24px)) 18px;
-  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.7);
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+  padding: 16px 20px max(28px, env(safe-area-inset-bottom, 24px)) 20px;
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.75);
   max-height: calc(88dvh - env(safe-area-inset-top, 0px));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
   transform: translateY(0);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.modal-overlay.hidden .modal-card {
+.modal-overlay.hidden .modal-card.botanical-sheet {
   transform: translateY(100%);
 }
 
 .modal-drag-handle {
-  width: 42px;
+  width: 40px;
   height: 5px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.22);
   border-radius: 3px;
   margin: 0 auto 14px auto;
-  cursor: grab;
 }
 
 .modal-header {
@@ -753,25 +707,38 @@ html, body {
   margin-bottom: 16px;
 }
 
-.doc-badge-pill {
+.sheet-title-group {
   display: flex;
   align-items: center;
-  gap: 7px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 600;
+  gap: 10px;
 }
 
-.badge-icon-svg {
+.sheet-main-title {
+  font-family: var(--font-brand);
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.sheet-status-pill {
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgba(134, 239, 172, 0.16);
   color: var(--mint-primary);
-  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.sheet-species-tag {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(187, 247, 208, 0.75);
 }
 
 .modal-close-btn {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   background: rgba(255, 255, 255, 0.08);
   border: none;
   border-radius: 50%;
@@ -785,30 +752,18 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.modal-close-btn:hover, .modal-close-btn:active {
+.modal-close-btn:active {
   background: rgba(255, 255, 255, 0.16);
 }
 
-/* Prescription Details */
-.prescription-status-hero {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 14px;
-  margin-bottom: 16px;
-}
-
-/* Prescription Snapshot Preview */
+/* Snapshot Preview */
 .prescription-snapshot-wrap {
   position: relative;
   width: 100%;
   height: 180px;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .rx-snapshot-img {
@@ -816,15 +771,15 @@ html, body {
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 16px;
+  border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: #0b140f;
 }
 
 .rx-snapshot-tag {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
+  bottom: 10px;
+  left: 10px;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -834,171 +789,197 @@ html, body {
   font-size: 11px;
   font-weight: 500;
   color: var(--mint-primary);
+}
+
+/* Diagnosis 4-Tile Grid */
+.diagnosis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.diagnosis-tile {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diag-tile-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.diag-tile-val {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
   letter-spacing: -0.01em;
 }
 
-/* Prescription Details */
-.prescription-status-hero {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 14px;
-  margin-bottom: 16px;
-}
-
-.rx-score-circle {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 3px solid var(--mint-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
+.diag-tile-val.mint-accent {
+  color: var(--mint-vibrant);
+  font-family: var(--font-brand);
   font-size: 18px;
   font-weight: 700;
-  color: var(--mint-primary);
-  flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
 }
 
-.rx-plant-name {
-  font-family: var(--font-brand);
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 3px;
-}
-
-.rx-diagnosis-label {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 999px;
-}
-
-.rx-section {
-  margin-bottom: 16px;
-}
-
-.rx-section-title {
-  font-size: 11.5px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-}
-
-.rx-desc {
-  font-size: 13.5px;
-  line-height: 1.45;
-  color: var(--text-primary);
-}
-
-.rx-care-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.rx-care-item {
-  display: flex;
-  gap: 10px;
+/* Care Tips Section */
+.care-tips-section {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 10px 12px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
 }
 
-.rx-care-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.05);
+.section-title {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.care-tips-list {
+  list-style: none;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.care-tip-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint-primary);
+  margin-top: 6px;
   flex-shrink: 0;
 }
 
-.rx-care-title {
+.tip-text {
   font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 2px;
+  line-height: 1.4;
+  color: var(--text-secondary);
 }
 
-.rx-care-desc {
-  font-size: 12px;
+/* Sheet Footer */
+.sheet-footer-area {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.diag-scientific-note {
+  font-size: 12.5px;
   color: var(--text-muted);
-  line-height: 1.35;
+  line-height: 1.45;
 }
 
-.rx-modal-actions {
-  margin-top: 20px;
-}
-
-.rx-ai-action-btn {
+.sheet-ai-action-btn {
   width: 100%;
   min-height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(22, 163, 74, 0.28) 100%);
-  border: 1px solid rgba(134, 239, 172, 0.4);
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.18) 0%, rgba(22, 163, 74, 0.28) 100%);
+  border: 1px solid rgba(134, 239, 172, 0.35);
   border-radius: 14px;
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 600;
   padding: 12px 18px;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.15s ease, background 0.2s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
-.rx-ai-action-btn:active {
+.sheet-ai-action-btn:active {
   transform: scale(0.98);
-  background: linear-gradient(135deg, rgba(74, 222, 128, 0.32) 0%, rgba(22, 163, 74, 0.45) 100%);
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.28) 0%, rgba(22, 163, 74, 0.4) 100%);
 }
 
-.rx-ai-action-btn svg {
+.sheet-ai-action-btn svg {
   color: var(--mint-primary);
   flex-shrink: 0;
 }
 
 /* ==========================================================================
-   AI Doctor Chat Conversation (Mobile Keyboard Friendly)
+   Tips Modal Sheet
    ========================================================================== */
-.gemma-chip {
-  font-size: 11px;
-  background: rgba(134, 239, 172, 0.18);
-  color: var(--mint-primary);
-  padding: 2px 8px;
-  border-radius: 999px;
-  margin-left: 4px;
-  font-weight: 500;
+.tips-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.tip-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.tip-card-icon {
+  font-size: 16px;
+}
+
+.tip-card-title {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.tip-card-desc {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   AI Doctor Consultation Chat Modal (Preserved)
+   ========================================================================== */
+.ai-chat-modal {
+  max-height: 85dvh;
 }
 
 .chat-conversation-scroll {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 35vh;
+  max-height: 38vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   margin-bottom: 12px;
-  padding-right: 2px;
 }
 
 .chat-bubble {
   display: flex;
   gap: 8px;
-  max-width: 92%;
+  max-width: 90%;
 }
 
 .chat-bubble.user-msg {
@@ -1040,7 +1021,7 @@ html, body {
   gap: 7px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
   margin-bottom: 10px;
   scrollbar-width: none;
 }
@@ -1050,32 +1031,22 @@ html, body {
 }
 
 .quick-chip {
-  min-height: 38px;
+  min-height: 34px;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 12px;
+  padding: 6px 12px;
+  font-size: 11.5px;
   color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
-  display: inline-flex;
-  align-items: center;
+  transition: background 0.15s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
 .quick-chip:active {
-  transform: scale(0.96);
   background: rgba(255, 255, 255, 0.16);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .quick-chip:hover {
-    background: rgba(255, 255, 255, 0.14);
-    color: #ffffff;
-  }
 }
 
 .chat-input-bar {
@@ -1094,7 +1065,7 @@ html, body {
   border: none;
   outline: none;
   color: #ffffff;
-  font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+  font-size: 16px; /* Prevents auto-zoom on iOS */
   font-family: var(--font-ui);
 }
 
@@ -1125,221 +1096,51 @@ html, body {
 
 /* Typing Dots Animation */
 .typing-dots span {
-  animation: blink 1.2s infinite;
-  font-size: 20px;
-  line-height: 10px;
+  animation: dotBlink 1.2s infinite;
+  font-size: 18px;
+  line-height: 8px;
 }
 
 .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 
-@keyframes blink {
+@keyframes dotBlink {
   0%, 100% { opacity: 0.2; }
   50% { opacity: 1; }
 }
 
 /* ==========================================================================
-   Spatial Leaf Pins
-   ========================================================================== */
-#spatial-pins-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 12;
-}
-
-.spatial-leaf-pin {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-  cursor: pointer;
-  z-index: 15;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.pin-target {
-  width: 16px;
-  height: 16px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.pin-core {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--pin-color, var(--mint-primary));
-  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.35);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.pin-pulse {
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1.5px solid var(--pin-color, var(--mint-primary));
-  animation: arTargetPulse 2.4s infinite cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-}
-
-@keyframes arTargetPulse {
-  0% { transform: scale(0.8); opacity: 0.85; }
-  70% { transform: scale(2.2); opacity: 0; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .spatial-leaf-pin:hover .pin-core {
-    transform: scale(1.35);
-  }
-}
-
-.spatial-leaf-pin.active .pin-core {
-  transform: scale(1.4);
-}
-
-/* Popover card: ONLY visible when pin is tapped/active */
-.pin-card-popover {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background: rgba(14, 23, 18, 0.94);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
-  border-radius: 12px;
-  padding: 6px 12px;
-  white-space: nowrap;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 30;
-}
-
-.spatial-leaf-pin.active .pin-card-popover {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
-
-.popover-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.popover-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.popover-title {
-  letter-spacing: -0.01em;
-}
-
-.popover-score {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--pin-color, var(--mint-primary));
-  margin-left: 3px;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-.popover-note {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-  font-weight: 500;
-}
-
-/* ==========================================================================
-   Responsive Breakpoint Rules (Mobile Extra-Small <= 360px)
+   Responsive & Accessibility Fallbacks
    ========================================================================== */
 @media (max-width: 360px) {
-  .brand-title {
-    font-size: 14.5px;
-  }
-  .status-label {
-    font-size: 11px;
-  }
-  .status-pill-badge {
-    padding: 5px 10px;
-  }
-  .camera-control-pill-btn, .ai-doc-pill-btn {
-    padding: 8px 10px;
-    font-size: 11.5px;
-  }
-  .condition-card-anchor {
-    bottom: calc(max(10px, env(safe-area-inset-bottom, 12px)) + 68px);
-  }
+  .brand-title { font-size: 15px; }
+  .brand-subtitle { font-size: 11px; }
+  .planto-result-card { padding: 10px 12px; gap: 10px; }
+  .result-thumb-wrap { width: 48px; height: 48px; }
+  .vitality-ring-container { width: 48px; height: 48px; }
+  .vitality-pct { font-size: 12px; }
+  .scan-btn-core { width: 62px; height: 62px; }
+  .scan-btn-outer-ring { width: 70px; height: 70px; }
+  .action-btn-circle { width: 44px; height: 44px; }
 }
 
-/* ==========================================================================
-   Typography & Selection Restoration (Better-Typography Standards)
-   ========================================================================== */
-.brand-title,
-.card-heading,
-.rx-plant-name,
-.rx-section-title,
-.doc-badge-text {
-  text-wrap: balance;
-}
-
-.card-subheading,
-.rx-desc,
-.chat-bubble p {
-  text-wrap: pretty;
-}
-
-.prescription-body,
-.chat-conversation-scroll {
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-/* ==========================================================================
-   Accessibility: Prefers-Reduced-Motion & Reduced-Transparency Fallbacks
-   (UI-Skills Standards: iart-ai/accessible-animation & glassmorphism)
-   ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
-
-  .shutter-glow-ring,
-  .pin-pulse,
-  .scan-laser-sweep {
-    animation: none !important;
-    opacity: 0.4 !important;
-  }
+  .scan-btn-outer-ring, .pin-pulse { animation: none !important; opacity: 0.4 !important; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .planto-condition-card,
-  .modal-card,
-  .camera-control-pill-btn,
-  .ai-doc-pill-btn,
-  .pin-card-popover,
-  .status-pill-badge {
+  .planto-result-card,
+  .modal-card.botanical-sheet,
+  .action-btn-circle,
+  .status-pill-badge,
+  .brand-icon-wrap {
     background: #0e1713 !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border-color: rgba(255, 255, 255, 0.22) !important;
   }
 }

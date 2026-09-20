@@ -1,71 +1,31 @@
 /**
- * LeafTracer — Luminous Dot-Matrix & ASCII Leaf Contour Scanner
- * Inspired by Claryx organic dot matrix, ASCII tulip floral tracing,
- * and Fancy Components pixel-trail interactions.
+ * LeafTracer — Minimal Modern Botanical AR Contour & Marker System
+ * 
+ * Replaces dense cyberpunk matrix/ASCII grids with:
+ * 1. A subtle, glowing mint-green vector contour hugging the detected plant silhouette.
+ * 2. An elegant central AR marker ((🍃)) positioned directly over the plant.
+ * 3. Minimal rounded corner brackets and a few subtle tracking anchor nodes.
+ * 
+ * Complies with the Apple Camera × modern plant-care app aesthetic.
  */
+
 export class LeafTracer {
   constructor(canvasElement) {
     this.canvas = canvasElement;
     this.ctx = canvasElement.getContext('2d');
-    this.scanProgress = 0; // 0 to 1 for sweep wave
-    this.pointerTrails = [];
-    this.lastPointer = null;
-
-    // ASCII characters ordered by visual density (inspired by reference image 2 & 3)
-    this.asciiRamp = ['2', '*', '+', 'e', '/', '•', 'o', '·'];
-
     this.activeColor = '#86efac';
     this.activeStatus = 'optimal';
 
-    this.initPointerListener();
+    // Animation & temporal smoothing
+    this.pulsePhase = 0;
+    this.smoothedContour = [];
+    this.smoothedCentroid = { x: 0.5, y: 0.5 };
+    this.hasTarget = false;
   }
 
   setColor(hexColor, status = 'optimal') {
     this.activeColor = hexColor || '#86efac';
     this.activeStatus = status;
-  }
-
-  initPointerListener() {
-    const onPointer = (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-
-      const touch = e.touches && e.touches.length > 0 ? e.touches[0] : e;
-      const scaleX = this.canvas.width / rect.width;
-      const scaleY = this.canvas.height / rect.height;
-      const x = (touch.clientX - rect.left) * scaleX;
-      const y = (touch.clientY - rect.top) * scaleY;
-
-      this.addPixelTrail(x, y);
-    };
-
-    window.addEventListener('mousemove', onPointer, { passive: true });
-    window.addEventListener('touchstart', onPointer, { passive: true });
-    window.addEventListener('touchmove', onPointer, { passive: true });
-  }
-
-  addPixelTrail(x, y) {
-    // Pixel-trail particle (Fancy Components inspired)
-    const size = 16;
-    const gridX = Math.floor(x / size) * size;
-    const gridY = Math.floor(y / size) * size;
-
-    // Avoid duplicate tiles at same position
-    if (this.pointerTrails.some(p => p.x === gridX && p.y === gridY && p.life > 0.6)) {
-      return;
-    }
-
-    this.pointerTrails.push({
-      x: gridX,
-      y: gridY,
-      size,
-      life: 1.0,
-      char: this.asciiRamp[Math.floor(Math.random() * this.asciiRamp.length)]
-    });
-
-    if (this.pointerTrails.length > 80) {
-      this.pointerTrails.shift();
-    }
   }
 
   render(analysis, sourceCanvas) {
@@ -75,19 +35,34 @@ export class LeafTracer {
 
     ctx.clearRect(0, 0, w, h);
 
-    // 1. Advance scanning sweep wave
-    this.scanProgress = (this.scanProgress + 0.012) % 1.0;
+    this.pulsePhase += 0.04;
 
-    // 2. Render ASCII / Dot Matrix Silhouette Tracing on Detected Plant Leaves
-    if (analysis && analysis.detected && analysis.mask) {
-      this.renderLeafMatrix(analysis, w, h);
+    if (!analysis || !analysis.detected) {
+      this.hasTarget = false;
+      this.smoothedContour = [];
+      return;
     }
 
-    // 3. Render Interactive Pixel Trail (Fancy Components style)
-    this.renderPixelTrails(w, h);
+    this.hasTarget = true;
+
+    // 1. Render glowing plant contour outline
+    if (analysis.mask) {
+      this.renderPlantContour(analysis, w, h);
+    }
+
+    // 2. Render subtle tracking points (sparse keypoints, not a dense grid)
+    this.renderSubtleTrackingNodes(analysis, w, h);
+
+    // 3. Render central AR marker on the plant centroid
+    if (analysis.centroid) {
+      this.renderCentralMarker(analysis.centroid, w, h);
+    }
   }
 
-  renderLeafMatrix(analysis, viewW, viewH) {
+  /**
+   * Extract boundary points from 160x120 mask and render a smooth glowing organic outline
+   */
+  renderPlantContour(analysis, viewW, viewH) {
     const ctx = this.ctx;
     const mask = analysis.mask;
     const mw = analysis.maskWidth;
@@ -95,143 +70,259 @@ export class LeafTracer {
 
     if (!mask || mw === 0 || mh === 0) return;
 
-    // Step size for matrix grid on screen
-    const step = 14; // spacing between dot/char glyphs
-    const cols = Math.floor(viewW / step);
-    const rows = Math.floor(viewH / step);
+    // Step 1: Extract perimeter boundary points
+    const step = 2; // sample resolution
+    const rawBoundary = [];
 
-    ctx.font = '500 11px "JetBrains Mono", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    for (let y = 1; y < mh - 1; y += step) {
+      for (let x = 1; x < mw - 1; x += step) {
+        const idx = y * mw + x;
+        if (mask[idx] > 0) {
+          // Check if it's an edge pixel (at least one 4-neighbor is background)
+          const isEdge = mask[idx - 1] === 0 ||
+                         mask[idx + 1] === 0 ||
+                         mask[idx - mw] === 0 ||
+                         mask[idx + mw] === 0;
 
-    const sweepY = this.scanProgress * viewH;
-    const sweepBand = 70;
-
-    for (let r = 0; r < rows; r++) {
-      const screenY = r * step + step / 2;
-      const normY = screenY / viewH;
-      const maskY = Math.floor(normY * mh);
-      if (maskY < 0 || maskY >= mh) continue;
-
-      // Distance from active scan sweep line
-      const distToSweep = Math.abs(screenY - sweepY);
-      const isNearSweep = distToSweep < sweepBand;
-      const sweepBoost = isNearSweep ? (1.0 - distToSweep / sweepBand) * 0.45 : 0;
-
-      for (let c = 0; c < cols; c++) {
-        const screenX = c * step + step / 2;
-        const normX = screenX / viewW;
-        const maskX = Math.floor(normX * mw);
-        if (maskX < 0 || maskX >= mw) continue;
-
-        const maskVal = mask[maskY * mw + maskX];
-        if (maskVal === 0) continue; // Not foliage
-
-        // Determine glyph & color based on botanical pathology
-        let glyph = '•';
-        let color = this.activeColor;
-        let baseAlpha = 0.55;
-
-        if (maskVal === 2) {
-          // Chlorosis / Yellowing
-          glyph = '+';
-          color = '#fef08a'; // Soft primrose
-          baseAlpha = 0.8;
-        } else if (maskVal === 3) {
-          // Necrosis / Burn
-          glyph = '*';
-          color = '#fca5a5'; // Soft coral
-          baseAlpha = 0.9;
-        } else if (maskVal === 4) {
-          // Variegation
-          glyph = '2';
-          color = '#fef08a';
-          baseAlpha = 0.75;
-        } else {
-          // Normal chlorophyll leaf tissue
-          const charIdx = (c + r) % this.asciiRamp.length;
-          glyph = this.asciiRamp[charIdx];
-          baseAlpha = 0.65;
+          if (isEdge) {
+            rawBoundary.push({
+              x: (x / mw) * viewW,
+              y: (y / mh) * viewH
+            });
+          }
         }
-
-        const finalAlpha = Math.min(1.0, baseAlpha + sweepBoost);
-
-        // Draw soft glowing dot / ASCII character
-        ctx.save();
-        ctx.shadowColor = color;
-        ctx.shadowBlur = isNearSweep ? 8 : 4;
-        ctx.fillStyle = color;
-        ctx.globalAlpha = finalAlpha;
-
-        // Alternate between glowing circle dot (Claryx style) and ASCII char (Tulip style)
-        if ((c + r) % 3 === 0) {
-          ctx.beginPath();
-          const dotRadius = isNearSweep ? 2.6 : 1.9;
-          ctx.arc(screenX, screenY, dotRadius, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.fillText(glyph, screenX, screenY);
-        }
-
-        ctx.restore();
       }
     }
 
-    // Draw scanning laser sweep line across active plant bounding box
-    if (analysis.box) {
-      const b = analysis.box;
-      const laserY = b.y * viewH + this.scanProgress * (b.height * viewH);
-      const startX = b.x * viewW;
-      const endX = (b.x + b.width) * viewW;
+    if (rawBoundary.length < 8) return;
 
-      ctx.save();
-      const grad = ctx.createLinearGradient(startX, laserY, endX, laserY);
-      grad.addColorStop(0, 'rgba(134, 239, 172, 0)');
-      grad.addColorStop(0.5, this.activeColor);
-      grad.addColorStop(1, 'rgba(134, 239, 172, 0)');
-
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = this.activeColor;
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.moveTo(startX, laserY);
-      ctx.lineTo(endX, laserY);
-      ctx.stroke();
-      ctx.restore();
+    // Step 2: Compute centroid for radial sorting (creates smooth closed contour loop)
+    let cx = 0, cy = 0;
+    for (let i = 0; i < rawBoundary.length; i++) {
+      cx += rawBoundary[i].x;
+      cy += rawBoundary[i].y;
     }
+    cx /= rawBoundary.length;
+    cy /= rawBoundary.length;
+
+    // Sort radially around centroid into sectors for a clean organic boundary
+    const sectors = 36;
+    const sectorBests = new Array(sectors).fill(null);
+
+    for (let i = 0; i < rawBoundary.length; i++) {
+      const pt = rawBoundary[i];
+      const dx = pt.x - cx;
+      const dy = pt.y - cy;
+      const dist = Math.hypot(dx, dy);
+      let angle = Math.atan2(dy, dx);
+      if (angle < 0) angle += Math.PI * 2;
+
+      const sectorIdx = Math.floor((angle / (Math.PI * 2)) * sectors) % sectors;
+      if (!sectorBests[sectorIdx] || dist > sectorBests[sectorIdx].dist) {
+        sectorBests[sectorIdx] = { x: pt.x, y: pt.y, dist };
+      }
+    }
+
+    // Filter non-empty sectors
+    const loopPoints = [];
+    for (let s = 0; s < sectors; s++) {
+      if (sectorBests[s]) {
+        loopPoints.push({ x: sectorBests[s].x, y: sectorBests[s].y });
+      } else {
+        // Fallback: interpolate between neighboring sectors
+        let prev = null, next = null;
+        for (let step = 1; step < sectors; step++) {
+          const pIdx = (s - step + sectors) % sectors;
+          if (!prev && sectorBests[pIdx]) prev = sectorBests[pIdx];
+          const nIdx = (s + step) % sectors;
+          if (!next && sectorBests[nIdx]) next = sectorBests[nIdx];
+          if (prev && next) break;
+        }
+        if (prev && next) {
+          loopPoints.push({
+            x: (prev.x + next.x) * 0.5,
+            y: (prev.y + next.y) * 0.5
+          });
+        }
+      }
+    }
+
+    if (loopPoints.length < 6) return;
+
+    // Temporal smoothing (Lerp with previous frame to eliminate jitter)
+    if (this.smoothedContour.length !== loopPoints.length) {
+      this.smoothedContour = loopPoints.map(p => ({ ...p }));
+    } else {
+      const lerp = 0.35;
+      for (let i = 0; i < loopPoints.length; i++) {
+        this.smoothedContour[i].x += (loopPoints[i].x - this.smoothedContour[i].x) * lerp;
+        this.smoothedContour[i].y += (loopPoints[i].y - this.smoothedContour[i].y) * lerp;
+      }
+    }
+
+    const pts = this.smoothedContour;
+
+    // Step 3: Draw the soft glowing mint contour
+    ctx.save();
+    ctx.beginPath();
+
+    // Start with midpoint between first and last point
+    const firstMidX = (pts[0].x + pts[pts.length - 1].x) * 0.5;
+    const firstMidY = (pts[0].y + pts[pts.length - 1].y) * 0.5;
+    ctx.moveTo(firstMidX, firstMidY);
+
+    for (let i = 0; i < pts.length; i++) {
+      const curr = pts[i];
+      const next = pts[(i + 1) % pts.length];
+      const midX = (curr.x + next.x) * 0.5;
+      const midY = (curr.y + next.y) * 0.5;
+      ctx.quadraticCurveTo(curr.x, curr.y, midX, midY);
+    }
+    ctx.closePath();
+
+    // Subtle breathing pulse on the glow
+    const glowIntensity = 8 + Math.sin(this.pulsePhase) * 3;
+
+    // Outer soft atmospheric glow
+    ctx.strokeStyle = this.activeColor;
+    ctx.shadowColor = this.activeColor;
+    ctx.shadowBlur = glowIntensity;
+    ctx.lineWidth = 2.2;
+    ctx.globalAlpha = 0.85;
+    ctx.stroke();
+
+    // Crisp inner core line
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = '#ffffff';
+    ctx.globalAlpha = 0.45;
+    ctx.stroke();
+
+    ctx.restore();
   }
 
-  renderPixelTrails(w, h) {
+  /**
+   * Render central AR marker ((🍃)) on the plant centroid
+   */
+  renderCentralMarker(centroid, viewW, viewH) {
     const ctx = this.ctx;
-    if (this.pointerTrails.length === 0) return;
 
-    for (let i = this.pointerTrails.length - 1; i >= 0; i--) {
-      const p = this.pointerTrails[i];
-      p.life -= 0.035;
+    // Smooth centroid coordinates
+    this.smoothedCentroid.x += (centroid.x - this.smoothedCentroid.x) * 0.25;
+    this.smoothedCentroid.y += (centroid.y - this.smoothedCentroid.y) * 0.25;
 
-      if (p.life <= 0) {
-        this.pointerTrails.splice(i, 1);
-        continue;
-      }
+    const cx = this.smoothedCentroid.x * viewW;
+    const cy = this.smoothedCentroid.y * viewH;
 
-      ctx.save();
-      ctx.globalAlpha = p.life * 0.7;
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // Subtle gentle pulse
+    const pulseScale = 1.0 + Math.sin(this.pulsePhase * 1.5) * 0.04;
+    const pulseAlpha = 0.65 + Math.sin(this.pulsePhase * 1.5) * 0.18;
+
+    // Outer subtle curved brackets: ( (   ) )
+    const bracketRadius = 26 * pulseScale;
+    const arcLen = Math.PI * 0.22;
+
+    ctx.strokeStyle = this.activeColor;
+    ctx.lineWidth = 1.6;
+    ctx.shadowColor = this.activeColor;
+    ctx.shadowBlur = 8;
+    ctx.globalAlpha = pulseAlpha;
+
+    // Left outer arc
+    ctx.beginPath();
+    ctx.arc(0, 0, bracketRadius, Math.PI - arcLen, Math.PI + arcLen);
+    ctx.stroke();
+
+    // Right outer arc
+    ctx.beginPath();
+    ctx.arc(0, 0, bracketRadius, -arcLen, arcLen);
+    ctx.stroke();
+
+    // Top outer arc
+    ctx.beginPath();
+    ctx.arc(0, 0, bracketRadius, -Math.PI * 0.5 - arcLen, -Math.PI * 0.5 + arcLen);
+    ctx.stroke();
+
+    // Bottom outer arc
+    ctx.beginPath();
+    ctx.arc(0, 0, bracketRadius, Math.PI * 0.5 - arcLen, Math.PI * 0.5 + arcLen);
+    ctx.stroke();
+
+    // Inner frosted circle disc
+    const innerRadius = 17;
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = 'rgba(10, 18, 13, 0.65)';
+    ctx.beginPath();
+    ctx.arc(0, 0, innerRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = this.activeColor;
+    ctx.lineWidth = 1.4;
+    ctx.globalAlpha = 0.9;
+    ctx.stroke();
+
+    // Botanical Leaf Glyph in center
+    ctx.fillStyle = '#86efac';
+    ctx.strokeStyle = '#86efac';
+    ctx.lineWidth = 1.4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowBlur = 4;
+
+    // Leaf outline vector path
+    ctx.beginPath();
+    // Leaf shape scaled to ~16px
+    ctx.moveTo(0, -7);
+    ctx.bezierCurveTo(5, -6, 7, -1, 6, 4);
+    ctx.bezierCurveTo(4, 7, 1, 8, 0, 9);
+    ctx.bezierCurveTo(-1, 8, -4, 7, -6, 4);
+    ctx.bezierCurveTo(-7, -1, -5, -6, 0, -7);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Center leaf vein
+    ctx.beginPath();
+    ctx.moveTo(0, -6);
+    ctx.lineTo(0, 8);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  /**
+   * Render a few sparse, elegant tracking points rather than an overwhelming grid
+   */
+  renderSubtleTrackingNodes(analysis, viewW, viewH) {
+    if (!analysis.box) return;
+    const ctx = this.ctx;
+    const b = analysis.box;
+
+    // Key spatial anchor points around the plant
+    const keyNodes = [
+      { x: (b.x + b.width * 0.35) * viewW, y: (b.y + b.height * 0.22) * viewH, delay: 0 },
+      { x: (b.x + b.width * 0.68) * viewW, y: (b.y + b.height * 0.32) * viewH, delay: 1.2 },
+      { x: (b.x + b.width * 0.26) * viewW, y: (b.y + b.height * 0.62) * viewH, delay: 2.4 },
+      { x: (b.x + b.width * 0.74) * viewW, y: (b.y + b.height * 0.65) * viewH, delay: 3.6 },
+    ];
+
+    ctx.save();
+    for (const node of keyNodes) {
+      const phase = this.pulsePhase + node.delay;
+      const alpha = 0.35 + Math.sin(phase) * 0.25;
+      if (alpha <= 0.1) continue;
+
       ctx.fillStyle = this.activeColor;
       ctx.shadowColor = this.activeColor;
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 6;
+      ctx.globalAlpha = alpha;
 
-      // Draw glowing pixel tile (Fancy Components pixel-trail)
-      ctx.fillRect(p.x + 1, p.y + 1, p.size - 2, p.size - 2);
-
-      // Draw center ASCII character
-      ctx.fillStyle = '#05080c';
-      ctx.font = '600 9px "JetBrains Mono", monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(p.char, p.x + p.size / 2, p.y + p.size / 2);
-
-      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 2.2, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.restore();
   }
 }
