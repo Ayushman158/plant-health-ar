@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Money Plant Doc">
+  <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="#070c0a">
 
   <title>Money Plant Doc — Botanical Health & Care System</title>
@@ -300,7 +302,7 @@
 
         <!-- Input Box -->
         <form id="ai-chat-form" class="chat-input-bar">
-          <input type="text" id="ai-user-input" placeholder="Ask Plant Doc anything about care or symptoms..." autocomplete="off">
+          <input type="text" id="ai-user-input" name="plant_doctor_query" aria-label="Ask Plant Doctor" placeholder="Ask Plant Doc about symptoms, watering, light…" autocomplete="off" spellcheck="false">
           <button type="submit" id="ai-send-btn" class="chat-send-btn" aria-label="Send query">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="22" y1="2" x2="11" y2="13"></line>
